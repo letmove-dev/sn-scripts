@@ -14,7 +14,7 @@
     });
   }
 
-  /* 1. ใส่ผ่าน g_form มาตรฐานของ ServiceNow */
+  /* 1. ใส่ข้อความผ่าน g_form มาตรฐานของ ServiceNow */
   if (f && typeof f.setValue === "function") {
     try {
       f.setValue("work_notes", noteText);
@@ -32,7 +32,7 @@
     textarea.focus();
     triggerEvents(textarea);
 
-    /* อัปเดต Scope ของ Angular เพื่อให้ปุ่ม Post ทำงานได้ */
+    /* อัปเดต Scope ของ Angular เพื่อให้ค่าถูกผูกกับโมเดลสมบูรณ์ */
     if (w.angular) {
       try {
         var scope = w.angular.element(textarea).scope();
@@ -44,8 +44,16 @@
     }
   }
 
-  /* เลื่อนหน้าจอลงมาโฟกัสที่ช่อง Work notes */
-  if (textarea) {
-    textarea.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
+  /* 3. สั่งกดปุ่ม Update ของหน้าเว็บอัตโนมัติ */
+  setTimeout(function () {
+    var updateBtn =
+      d.getElementById("sysverb_update") ||
+      d.querySelector('button[id="sysverb_update"], button[name="not_important"]');
+
+    if (updateBtn) {
+      updateBtn.click();
+    } else if (f && typeof f.save === "function") {
+      f.save();
+    }
+  }, 400);
 })();
