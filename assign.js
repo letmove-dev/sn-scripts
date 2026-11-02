@@ -23,7 +23,6 @@
     return false;
   }
 
-  /* ฟังก์ชันเซ็ตค่า Reference Field อย่างปลอดภัย ไม่ทำให้เกิด Match not found */
   function setReference(fieldName, val, displayVal) {
     displayVal = displayVal || val;
     if (f && typeof f.setValue === "function") {
@@ -35,6 +34,11 @@
     if (disp) {
       disp.value = displayVal;
       triggerEvents(disp);
+    }
+    var raw = d.getElementById(fieldName) || d.querySelector('input[name="' + fieldName + '"]:not([id*="sys_display"])');
+    if (raw) {
+      raw.value = val;
+      triggerEvents(raw);
     }
   }
 
@@ -123,9 +127,9 @@
   var isTask = numVal.indexOf("SCTASK") !== -1 || curUrl.indexOf("sc_task") !== -1;
   var isInc = numVal.indexOf("INC") !== -1 || curUrl.indexOf("incident") !== -1;
 
-  /* ดึง sys_id ของคนที่ล็อกอินอยู่โดยอัตโนมัติ */
   var myUserId = (w.g_user && w.g_user.userID) || (window.top.g_user && window.top.g_user.userID) || "";
   var aName = "Adoon Chueachai";
+  var spectrumProSysId = "2b53198edbef1850aabaaab35b96199f";
 
   if (isTask) {
     if (myUserId) {
@@ -136,11 +140,6 @@
 
     showModal("⚡ JJ_Se: Catalog Task Setup", function (sysId, fullName) {
       setReference("sc_task.cmdb_ci", sysId, fullName);
-      var ciRaw = d.getElementById("sc_task.cmdb_ci");
-      if (ciRaw) {
-        ciRaw.value = sysId;
-        triggerEvents(ciRaw);
-      }
       clickUpdate();
     });
   } else if (isInc) {
@@ -158,7 +157,7 @@
         triggerEvents(catSelect);
       }
 
-      /* 2. Assigned To (ใช้ User ID ถ้ามี) */
+      /* 2. Assigned To */
       if (myUserId) {
         setReference("incident.assigned_to", myUserId, aName);
       } else {
@@ -167,22 +166,10 @@
 
       /* 3. Configuration Item */
       setReference("incident.cmdb_ci", sysId, fullName);
-      var ciRaw = d.getElementById("incident.cmdb_ci");
-      if (ciRaw) {
-        ciRaw.value = sysId;
-        triggerEvents(ciRaw);
-      }
 
-      /* 4. Business Application */
-      var bAppDisp = d.getElementById("sys_display.incident.business_application") || d.getElementById("sys_display.incident.u_business_application");
-      if (bAppDisp) {
-        bAppDisp.value = "SpectrumPro";
-        triggerEvents(bAppDisp);
-      }
-      if (f) {
-        try { f.setValue("business_application", "SpectrumPro", "SpectrumPro"); } catch (e) {}
-        try { f.setValue("u_business_application", "SpectrumPro", "SpectrumPro"); } catch (e) {}
-      }
+      /* 4. Business Application (ใส่ sys_id จริง) */
+      setReference("incident.u_business_application", spectrumProSysId, "SpectrumPro");
+      setReference("u_business_application", spectrumProSysId, "SpectrumPro");
 
       /* 5. Customer & HealthTech */
       function fillCustomerAndHealthTech() {
