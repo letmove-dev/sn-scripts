@@ -7,10 +7,9 @@
 
   function triggerEvents(el) {
     if (!el) return;
-    var evts = ["input", "change", "blur"];
-    for (var i = 0; i < evts.length; i++) {
-      el.dispatchEvent(new Event(evts[i], { bubbles: true }));
-    }
+    ["input", "change"].forEach(function (evt) {
+      el.dispatchEvent(new Event(evt, { bubbles: true }));
+    });
   }
 
   function setFieldValue(id, val) {
@@ -23,37 +22,36 @@
     return false;
   }
 
-  /* ฟังก์ชันเซ็ต Reference Field ที่ผ่านการทดสอบกับ GlideForm */
-  function setRefField(fieldBaseName, sysId, displayVal) {
+  /* ฟังก์ชันเซ็ต Reference Field ปลอดภัย ไม่กระตุ้น Autocomplete Blur */
+  function setRefFieldSafe(fieldBaseName, sysId, displayVal) {
     displayVal = displayVal || sysId;
 
-    /* 1. เรียกผ่าน g_form API ก่อน */
     if (f && typeof f.setValue === "function") {
       try {
         f.setValue(fieldBaseName, sysId, displayVal);
       } catch (e) {}
     }
 
-    /* 2. เซ็ตค่าลง DOM input ทุกตัวที่เกี่ยวข้อง */
+    /* เซ็ตค่าช่องแสดงผลโดยไม่ออก event blur */
     var dispInputs = d.querySelectorAll(
-      'input[id="sys_display.' + fieldBaseName + '"], input[name="sys_display.' + fieldBaseName + '"], input[id*="display.' + fieldBaseName + '"]'
+      'input[id="sys_display.' + fieldBaseName + '"], input[name="sys_display.' + fieldBaseName + '"]'
     );
     dispInputs.forEach(function (disp) {
       disp.value = displayVal;
-      disp.setAttribute("data-value", sysId);
-      disp.setAttribute("data-original-value", displayVal);
     });
 
+    /* เซ็ตค่าช่อง sys_id ตัวจริง */
     var rawInputs = d.querySelectorAll(
       'input[id="' + fieldBaseName + '"], input[name="' + fieldBaseName + '"]'
     );
     rawInputs.forEach(function (raw) {
       if (raw.id.indexOf("sys_display") === -1) {
         raw.value = sysId;
+        raw.dispatchEvent(new Event("change", { bubbles: true }));
       }
     });
 
-    /* 3. ล้างสถานะ invalid หรือ error flag ของ ServiceNow */
+    /* เคลียร์ข้อความแจ้งเตือนสีแดง (ถ้ามี) */
     var elemWrapper = d.getElementById("element." + fieldBaseName);
     if (elemWrapper) {
       elemWrapper.classList.remove("has-error");
@@ -98,7 +96,7 @@
       } else if (f && typeof f.save === "function") {
         f.save();
       }
-    }, 600);
+    }, 700);
   }
 
   function showModal(title, onConfirm) {
@@ -153,16 +151,16 @@
 
   if (isTask) {
     if (myUserId) {
-      setRefField("assigned_to", myUserId, aName);
-      setRefField("sc_task.assigned_to", myUserId, aName);
+      setRefFieldSafe("assigned_to", myUserId, aName);
+      setRefFieldSafe("sc_task.assigned_to", myUserId, aName);
     } else {
-      setRefField("assigned_to", aName, aName);
-      setRefField("sc_task.assigned_to", aName, aName);
+      setRefFieldSafe("assigned_to", aName, aName);
+      setRefFieldSafe("sc_task.assigned_to", aName, aName);
     }
 
     showModal("⚡ JJ_Se: Catalog Task Setup", function (sysId, fullName) {
-      setRefField("cmdb_ci", sysId, fullName);
-      setRefField("sc_task.cmdb_ci", sysId, fullName);
+      setRefFieldSafe("cmdb_ci", sysId, fullName);
+      setRefFieldSafe("sc_task.cmdb_ci", sysId, fullName);
       clickUpdate();
     });
   } else if (isInc) {
@@ -182,21 +180,16 @@
 
       /* 2. Assigned To */
       if (myUserId) {
-        setRefField("assigned_to", myUserId, aName);
-        setRefField("incident.assigned_to", myUserId, aName);
+        setRefFieldSafe("assigned_to", myUserId, aName);
+        setRefFieldSafe("incident.assigned_to", myUserId, aName);
       } else {
-        setRefField("assigned_to", aName, aName);
-        setRefField("incident.assigned_to", aName, aName);
+        setRefFieldSafe("assigned_to", aName, aName);
+        setRefFieldSafe("incident.assigned_to", aName, aName);
       }
 
-      /* 3. Business Application & Configuration Item (หน่วงเวลาเล็กน้อยเพื่อรอ Dependent lookup) */
-      setTimeout(function () {
-        setRefField("u_business_application", spectrumProSysId, "SpectrumPro");
-        setRefField("incident.u_business_application", spectrumProSysId, "SpectrumPro");
-
-        setRefField("cmdb_ci", sysId, fullName);
-        setRefField("incident.cmdb_ci", sysId, fullName);
-      }, 150);
+      /* 3. Business Application */
+      setRefFieldSafe("u_business_application", spectrumProSysId, "SpectrumPro");
+      setRefFieldSafe("incident.u_business_application", spectrumProSysId, "SpectrumPro");
 
       /* 4. Customer & HealthTech */
       function fillCustomerAndHealthTech() {
@@ -234,15 +227,21 @@
         var custDisp = d.getElementById("sys_display.incident.u_customer");
         if (custDisp) {
           custDisp.value = custName;
-          triggerEvents(custDisp);
         }
       }
 
-      setTimeout(fillCustomerAndHealthTech, 250);
+      fillCustomerAndHealthTech();
+
+      /* 5. Configuration Item (หน่วงเวลาเพื่อให้ระบบโหลด Reference Qualifier ของ Business App ให้เสร็จก่อน) */
       setTimeout(function () {
-        fillCustomerAndHealthTech();
+        setRefFieldSafe("cmdb_ci", sysId, fullName);
+        setRefFieldSafe("incident.cmdb_ci", sysId, fullName);
+      }, 350);
+
+      /* 6. ยืนยันการบันทึก */
+      setTimeout(function () {
         clickUpdate();
-      }, 600);
+      }, 800);
     });
   } else {
     alert("ไม่พบหน้าจอ SCTASK หรือ Incident ครับ");
