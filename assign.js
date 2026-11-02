@@ -13,6 +13,29 @@
     }
   }
 
+  function setRefField(fieldName, val, displayVal) {
+    displayVal = displayVal || val;
+    if (f && typeof f.setValue === "function") {
+      try {
+        f.setValue(fieldName, val, displayVal);
+      } catch (e) {}
+    }
+    var dispEl = d.querySelector(
+      'input[id="sys_display.' + fieldName + '"], input[name="sys_display.' + fieldName + '"]'
+    );
+    var rawEl = d.querySelector(
+      'input[id="' + fieldName + '"], input[name="' + fieldName + '"]:not([id*="sys_display"])'
+    );
+    if (dispEl) {
+      dispEl.value = displayVal;
+      triggerEvents(dispEl);
+    }
+    if (rawEl) {
+      rawEl.value = val;
+      triggerEvents(rawEl);
+    }
+  }
+
   function fillField(selectors, val) {
     for (var i = 0; i < selectors.length; i++) {
       var el = d.querySelector(selectors[i]);
@@ -112,39 +135,12 @@
 
   if (isTask) {
     var aName = "Adoon Chueachai";
-    if (f) {
-      try {
-        f.setValue("assigned_to", aName, aName);
-      } catch (e) {}
-    }
-    var aDisp = d.querySelector(
-      'input[id="sys_display.sc_task.assigned_to"],input[id*="display.assigned_to"]'
-    );
-    if (aDisp) {
-      aDisp.value = aName;
-      triggerEvents(aDisp);
-    }
+    setRefField("sc_task.assigned_to", aName, aName);
+    setRefField("assigned_to", aName, aName);
 
     showModal("⚡ JJ_Se: Catalog Task Setup", function (sysId, fullName) {
-      if (f) {
-        try {
-          f.setValue("cmdb_ci", sysId, fullName);
-        } catch (e) {}
-      }
-      var dispEl = d.querySelector(
-        'input[id="sys_display.sc_task.cmdb_ci"],input[id*="display.cmdb_ci"]'
-      );
-      var rawEl = d.querySelector(
-        'input[id="sc_task.cmdb_ci"],input[id*="cmdb_ci"]:not([id*="display"])'
-      );
-      if (dispEl) {
-        dispEl.value = fullName;
-        triggerEvents(dispEl);
-      }
-      if (rawEl) {
-        rawEl.value = sysId;
-        triggerEvents(rawEl);
-      }
+      setRefField("sc_task.cmdb_ci", sysId, fullName);
+      setRefField("cmdb_ci", sysId, fullName);
       clickUpdate();
     });
   } else if (isInc) {
@@ -153,54 +149,31 @@
       var parts = fullName.split(" - ");
       var custName = parts[parts.length - 1].trim();
 
+      /* 1. Category */
       if (f) {
-        try {
-          f.setValue("assigned_to", aName, aName);
-        } catch (e) {}
-        try {
-          f.setValue("category", "application");
-        } catch (e) {}
-        try {
-          f.setValue("business_application", "SpectrumPro", "SpectrumPro");
-        } catch (e) {}
-        try {
-          f.setValue("u_business_application", "SpectrumPro", "SpectrumPro");
-        } catch (e) {}
-        try {
-          f.setValue("cmdb_ci", sysId, fullName);
-        } catch (e) {}
+        try { f.setValue("category", "application"); } catch (e) {}
       }
-
-      fillField(
-        ['input[id="sys_display.incident.assigned_to"]', 'input[id*="display.assigned_to"]'],
-        aName
-      );
       var catSelect = d.querySelector('select[id="incident.category"]');
       if (catSelect) {
         catSelect.value = "application";
         triggerEvents(catSelect);
       }
-      fillField(
-        [
-          'input[id="sys_display.incident.u_business_application"]',
-          'input[id="sys_display.incident.business_application"]',
-          'input[id*="display.business_application"]'
-        ],
-        "SpectrumPro"
-      );
-      fillField(
-        [
-          'input[id="incident.u_business_application"]',
-          'input[id="incident.business_application"]'
-        ],
-        "SpectrumPro"
-      );
-      fillField(
-        ['input[id="sys_display.incident.cmdb_ci"]', 'input[id*="display.cmdb_ci"]'],
-        fullName
-      );
-      fillField(['input[id="incident.cmdb_ci"]'], sysId);
 
+      /* 2. Assigned To */
+      setRefField("incident.assigned_to", aName, aName);
+      setRefField("assigned_to", aName, aName);
+
+      /* 3. Business Application */
+      setRefField("incident.business_application", "SpectrumPro", "SpectrumPro");
+      setRefField("business_application", "SpectrumPro", "SpectrumPro");
+      setRefField("incident.u_business_application", "SpectrumPro", "SpectrumPro");
+      setRefField("u_business_application", "SpectrumPro", "SpectrumPro");
+
+      /* 4. Configuration Item */
+      setRefField("incident.cmdb_ci", sysId, fullName);
+      setRefField("cmdb_ci", sysId, fullName);
+
+      /* 5. Customer & HealthTech */
       function fillCustomerAndHealthTech() {
         var htContainer = d.getElementById("element.incident.u_healthtech_customer_scope");
         if (htContainer) {
@@ -213,18 +186,10 @@
           custContainer.classList.remove("hidden");
         }
         if (f) {
-          try {
-            f.setDisplay("u_healthtech_customer_scope", true);
-          } catch (e) {}
-          try {
-            f.setValue("u_healthtech_customer_scope", "no");
-          } catch (e) {}
-          try {
-            f.setDisplay("u_customer", true);
-          } catch (e) {}
-          try {
-            f.setValue("u_customer", custName);
-          } catch (e) {}
+          try { f.setDisplay("u_healthtech_customer_scope", true); } catch (e) {}
+          try { f.setValue("u_healthtech_customer_scope", "no"); } catch (e) {}
+          try { f.setDisplay("u_customer", true); } catch (e) {}
+          try { f.setValue("u_customer", custName); } catch (e) {}
         }
         var htSelect = d.querySelector(
           'select[id="incident.u_healthtech_customer_scope"], select[id*="healthtech"]'
