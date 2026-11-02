@@ -22,7 +22,7 @@
     return false;
   }
 
-  /* ฟังก์ชันเซ็ต Reference โดยตรง ไม่กวน Autocomplete Validator */
+  /* ฟังก์ชันเซ็ต Reference โดยตรงอย่างปลอดภัย ไม่ทำให้เกิด Match not found */
   function applyReference(fieldName, sysId, displayName) {
     displayName = displayName || sysId;
     if (f && typeof f.setValue === "function") {
@@ -132,18 +132,18 @@
   var isTask = numVal.indexOf("SCTASK") !== -1 || curUrl.indexOf("sc_task") !== -1;
   var isInc = numVal.indexOf("INC") !== -1 || curUrl.indexOf("incident") !== -1;
 
-  var myUserId = (w.g_user && w.g_user.userID) || (window.top.g_user && window.top.g_user.userID) || "";
-  var aName = "Adoon Chueachai";
+  /* เช็คตัวตนคนที่กำลังล็อกอินอยู่หน้านั้นแบบอัตโนมัติ */
+  var userObj = w.g_user || (window.top && window.top.g_user) || {};
+  var currentUserId = userObj.userID || "";
+  var currentDisplayName = (userObj.firstName && userObj.lastName)
+    ? (userObj.firstName + " " + userObj.lastName).trim()
+    : (userObj.name || "Adoon Chueachai");
+
   var spectrumProSysId = "2b53198edbef1850aabaaab35b96199f";
 
   if (isTask) {
-    if (myUserId) {
-      applyReference("assigned_to", myUserId, aName);
-      applyReference("sc_task.assigned_to", myUserId, aName);
-    } else {
-      applyReference("assigned_to", aName, aName);
-      applyReference("sc_task.assigned_to", aName, aName);
-    }
+    applyReference("assigned_to", currentUserId, currentDisplayName);
+    applyReference("sc_task.assigned_to", currentUserId, currentDisplayName);
 
     showModal("⚡ JJ_Se: Catalog Task Setup", function (sysId, fullName) {
       applyReference("cmdb_ci", sysId, fullName);
@@ -165,14 +165,9 @@
         triggerEvents(catSelect);
       }
 
-      /* 2. Assigned To */
-      if (myUserId) {
-        applyReference("assigned_to", myUserId, aName);
-        applyReference("incident.assigned_to", myUserId, aName);
-      } else {
-        applyReference("assigned_to", aName, aName);
-        applyReference("incident.assigned_to", aName, aName);
-      }
+      /* 2. Current Assigned to ดึงชื่อคนที่กดปุ่มอัตโนมัติ */
+      applyReference("assigned_to", currentUserId, currentDisplayName);
+      applyReference("incident.assigned_to", currentUserId, currentDisplayName);
 
       /* 3. Business Application */
       applyReference("u_business_application", spectrumProSysId, "SpectrumPro");
@@ -213,13 +208,13 @@
         custDisp.value = custName;
       }
 
-      /* 5. Configuration Item: หน่วงเวลา 500ms ให้ระบบตรวจ Business App ให้จบก่อนเซ็ต */
+      /* 5. Configuration Item หน่วงเวลา 500ms ป้องกันการชนกับ Business App */
       setTimeout(function () {
         applyReference("cmdb_ci", sysId, fullName);
         applyReference("incident.cmdb_ci", sysId, fullName);
       }, 500);
 
-      /* 6. ทำการบันทึก */
+      /* 6. กด Update อัตโนมัติ */
       clickUpdate();
     });
   } else {
