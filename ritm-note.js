@@ -1,5 +1,4 @@
 (function () {
-  /* หา Window และ Document ที่ถูกต้อง ไม่ว่าจะอยู่ใน Frame ใด */
   var w = document.getElementById("gsft_main")
     ? document.getElementById("gsft_main").contentWindow
     : window;
@@ -15,14 +14,14 @@
     });
   }
 
-  /* 1. ใส่ค่าผ่าน g_form ของ ServiceNow */
+  /* 1. ส่งค่าเข้า g_form */
   if (f && typeof f.setValue === "function") {
     try {
       f.setValue("work_notes", noteText);
     } catch (e) {}
   }
 
-  /* 2. เซ็ตค่าลงใน DOM ของ Activity Stream (AngularJS) */
+  /* 2. กรอกลงใน Activity Stream Textarea */
   var textarea =
     d.getElementById("activity-stream-textarea") ||
     d.querySelector('textarea[data-stream-text-input="work_notes"]') ||
@@ -33,7 +32,6 @@
     textarea.focus();
     triggerEvents(textarea);
 
-    /* เชื่อมเข้ากับโมเดลของ AngularJS เพื่อให้ระบบตรวจจับข้อความ */
     if (w.angular) {
       try {
         var scope = w.angular.element(textarea).scope();
@@ -45,36 +43,32 @@
     }
   }
 
-  /* 3. เซ็ตค่าลงใน hidden input พื้นฐานของ Form */
-  var hiddenInputs = d.querySelectorAll('input[id*="work_notes"], textarea[id*="work_notes"]');
-  hiddenInputs.forEach(function (el) {
-    if (el.id !== "activity-stream-textarea") {
-      el.value = noteText;
-      triggerEvents(el);
-    }
-  });
-
-  /* 4. สั่ง Submit บันทึก Form โดยใช้ gsftSubmit แท้ของ ServiceNow */
+  /* 3. สั่งกดปุ่ม Update หรือ Post */
   setTimeout(function () {
-    /* ค้นหาปุ่ม Update ทั้งใน Iframe และนอก Iframe */
-    var updateBtn =
-      d.getElementById("sysverb_update") ||
-      d.querySelector('button[id="sysverb_update"]') ||
-      document.getElementById("sysverb_update") ||
-      document.querySelector('button[id="sysverb_update"]');
-
-    if (w.gsftSubmit && updateBtn) {
-      /* เรียกคำสั่งตรงตาม onclick="return gsftSubmit(this);" */
+    // วิธีที่ 1: เรียกคำสั่งบันทึก Form แบบสมบูรณ์ของ ServiceNow
+    if (f && typeof f.getFormElement === "function" && typeof w.gsftSubmit === "function") {
       try {
-        w.gsftSubmit(updateBtn);
-        return;
+        var formEl = f.getFormElement();
+        if (formEl) {
+          w.gsftSubmit(null, formEl, "sysverb_update");
+          return;
+        }
       } catch (e) {}
     }
 
+    // วิธีที่ 2: กดปุ่ม Update ตรงๆ
+    var updateBtn =
+      d.getElementById("sysverb_update") ||
+      d.querySelector('button[id="sysverb_update"], button[value="sysverb_update"]');
+
     if (updateBtn) {
       updateBtn.click();
-    } else if (f && typeof f.save === "function") {
+      return;
+    }
+
+    // วิธีที่ 3: fallback ด้วย g_form.save()
+    if (f && typeof f.save === "function") {
       f.save();
     }
-  }, 400);
+  }, 300);
 })();
