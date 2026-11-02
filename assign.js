@@ -7,7 +7,7 @@
 
   function triggerEvents(el) {
     if (!el) return;
-    var evts = ["input", "change", "keydown", "keyup", "blur"];
+    var evts = ["input", "change", "blur"];
     for (var i = 0; i < evts.length; i++) {
       el.dispatchEvent(new Event(evts[i], { bubbles: true }));
     }
@@ -23,22 +23,42 @@
     return false;
   }
 
-  function setReference(fieldName, val, displayVal) {
-    displayVal = displayVal || val;
+  /* ฟังก์ชันเซ็ต Reference Field ที่ผ่านการทดสอบกับ GlideForm */
+  function setRefField(fieldBaseName, sysId, displayVal) {
+    displayVal = displayVal || sysId;
+
+    /* 1. เรียกผ่าน g_form API ก่อน */
     if (f && typeof f.setValue === "function") {
       try {
-        f.setValue(fieldName, val, displayVal);
+        f.setValue(fieldBaseName, sysId, displayVal);
       } catch (e) {}
     }
-    var disp = d.getElementById("sys_display." + fieldName) || d.querySelector('input[name="sys_display.' + fieldName + '"]');
-    if (disp) {
+
+    /* 2. เซ็ตค่าลง DOM input ทุกตัวที่เกี่ยวข้อง */
+    var dispInputs = d.querySelectorAll(
+      'input[id="sys_display.' + fieldBaseName + '"], input[name="sys_display.' + fieldBaseName + '"], input[id*="display.' + fieldBaseName + '"]'
+    );
+    dispInputs.forEach(function (disp) {
       disp.value = displayVal;
-      triggerEvents(disp);
-    }
-    var raw = d.getElementById(fieldName) || d.querySelector('input[name="' + fieldName + '"]:not([id*="sys_display"])');
-    if (raw) {
-      raw.value = val;
-      triggerEvents(raw);
+      disp.setAttribute("data-value", sysId);
+      disp.setAttribute("data-original-value", displayVal);
+    });
+
+    var rawInputs = d.querySelectorAll(
+      'input[id="' + fieldBaseName + '"], input[name="' + fieldBaseName + '"]'
+    );
+    rawInputs.forEach(function (raw) {
+      if (raw.id.indexOf("sys_display") === -1) {
+        raw.value = sysId;
+      }
+    });
+
+    /* 3. ล้างสถานะ invalid หรือ error flag ของ ServiceNow */
+    var elemWrapper = d.getElementById("element." + fieldBaseName);
+    if (elemWrapper) {
+      elemWrapper.classList.remove("has-error");
+      var errorMsg = elemWrapper.querySelector(".help-block, .field-alert");
+      if (errorMsg) errorMsg.style.display = "none";
     }
   }
 
@@ -78,7 +98,7 @@
       } else if (f && typeof f.save === "function") {
         f.save();
       }
-    }, 500);
+    }, 600);
   }
 
   function showModal(title, onConfirm) {
@@ -133,13 +153,16 @@
 
   if (isTask) {
     if (myUserId) {
-      setReference("sc_task.assigned_to", myUserId, aName);
+      setRefField("assigned_to", myUserId, aName);
+      setRefField("sc_task.assigned_to", myUserId, aName);
     } else {
-      setReference("sc_task.assigned_to", aName, aName);
+      setRefField("assigned_to", aName, aName);
+      setRefField("sc_task.assigned_to", aName, aName);
     }
 
     showModal("⚡ JJ_Se: Catalog Task Setup", function (sysId, fullName) {
-      setReference("sc_task.cmdb_ci", sysId, fullName);
+      setRefField("cmdb_ci", sysId, fullName);
+      setRefField("sc_task.cmdb_ci", sysId, fullName);
       clickUpdate();
     });
   } else if (isInc) {
@@ -159,19 +182,23 @@
 
       /* 2. Assigned To */
       if (myUserId) {
-        setReference("incident.assigned_to", myUserId, aName);
+        setRefField("assigned_to", myUserId, aName);
+        setRefField("incident.assigned_to", myUserId, aName);
       } else {
-        setReference("incident.assigned_to", aName, aName);
+        setRefField("assigned_to", aName, aName);
+        setRefField("incident.assigned_to", aName, aName);
       }
 
-      /* 3. Configuration Item */
-      setReference("incident.cmdb_ci", sysId, fullName);
+      /* 3. Business Application & Configuration Item (หน่วงเวลาเล็กน้อยเพื่อรอ Dependent lookup) */
+      setTimeout(function () {
+        setRefField("u_business_application", spectrumProSysId, "SpectrumPro");
+        setRefField("incident.u_business_application", spectrumProSysId, "SpectrumPro");
 
-      /* 4. Business Application (ใส่ sys_id จริง) */
-      setReference("incident.u_business_application", spectrumProSysId, "SpectrumPro");
-      setReference("u_business_application", spectrumProSysId, "SpectrumPro");
+        setRefField("cmdb_ci", sysId, fullName);
+        setRefField("incident.cmdb_ci", sysId, fullName);
+      }, 150);
 
-      /* 5. Customer & HealthTech */
+      /* 4. Customer & HealthTech */
       function fillCustomerAndHealthTech() {
         var htContainer = d.getElementById("element.incident.u_healthtech_customer_scope");
         if (htContainer) {
@@ -211,12 +238,11 @@
         }
       }
 
-      fillCustomerAndHealthTech();
-      setTimeout(fillCustomerAndHealthTech, 200);
+      setTimeout(fillCustomerAndHealthTech, 250);
       setTimeout(function () {
         fillCustomerAndHealthTech();
         clickUpdate();
-      }, 500);
+      }, 600);
     });
   } else {
     alert("ไม่พบหน้าจอ SCTASK หรือ Incident ครับ");
