@@ -13,39 +13,29 @@
     }
   }
 
-  function setRefField(fieldName, val, displayVal) {
+  function setFieldValue(id, val) {
+    var el = d.getElementById(id) || d.querySelector('[name="' + id + '"]');
+    if (el) {
+      el.value = val;
+      triggerEvents(el);
+      return true;
+    }
+    return false;
+  }
+
+  /* ฟังก์ชันเซ็ตค่า Reference Field อย่างปลอดภัย ไม่ทำให้เกิด Match not found */
+  function setReference(fieldName, val, displayVal) {
     displayVal = displayVal || val;
     if (f && typeof f.setValue === "function") {
       try {
         f.setValue(fieldName, val, displayVal);
       } catch (e) {}
     }
-    var dispEl = d.querySelector(
-      'input[id="sys_display.' + fieldName + '"], input[name="sys_display.' + fieldName + '"]'
-    );
-    var rawEl = d.querySelector(
-      'input[id="' + fieldName + '"], input[name="' + fieldName + '"]:not([id*="sys_display"])'
-    );
-    if (dispEl) {
-      dispEl.value = displayVal;
-      triggerEvents(dispEl);
+    var disp = d.getElementById("sys_display." + fieldName) || d.querySelector('input[name="sys_display.' + fieldName + '"]');
+    if (disp) {
+      disp.value = displayVal;
+      triggerEvents(disp);
     }
-    if (rawEl) {
-      rawEl.value = val;
-      triggerEvents(rawEl);
-    }
-  }
-
-  function fillField(selectors, val) {
-    for (var i = 0; i < selectors.length; i++) {
-      var el = d.querySelector(selectors[i]);
-      if (el) {
-        el.value = val;
-        triggerEvents(el);
-        return true;
-      }
-    }
-    return false;
   }
 
   var ciList = [
@@ -84,7 +74,7 @@
       } else if (f && typeof f.save === "function") {
         f.save();
       }
-    }, 400);
+    }, 500);
   }
 
   function showModal(title, onConfirm) {
@@ -133,18 +123,27 @@
   var isTask = numVal.indexOf("SCTASK") !== -1 || curUrl.indexOf("sc_task") !== -1;
   var isInc = numVal.indexOf("INC") !== -1 || curUrl.indexOf("incident") !== -1;
 
+  /* ดึง sys_id ของคนที่ล็อกอินอยู่โดยอัตโนมัติ */
+  var myUserId = (w.g_user && w.g_user.userID) || (window.top.g_user && window.top.g_user.userID) || "";
+  var aName = "Adoon Chueachai";
+
   if (isTask) {
-    var aName = "Adoon Chueachai";
-    setRefField("sc_task.assigned_to", aName, aName);
-    setRefField("assigned_to", aName, aName);
+    if (myUserId) {
+      setReference("sc_task.assigned_to", myUserId, aName);
+    } else {
+      setReference("sc_task.assigned_to", aName, aName);
+    }
 
     showModal("⚡ JJ_Se: Catalog Task Setup", function (sysId, fullName) {
-      setRefField("sc_task.cmdb_ci", sysId, fullName);
-      setRefField("cmdb_ci", sysId, fullName);
+      setReference("sc_task.cmdb_ci", sysId, fullName);
+      var ciRaw = d.getElementById("sc_task.cmdb_ci");
+      if (ciRaw) {
+        ciRaw.value = sysId;
+        triggerEvents(ciRaw);
+      }
       clickUpdate();
     });
   } else if (isInc) {
-    var aName = "Adoon Chueachai";
     showModal("⚡ JJ_In: Incident Setup", function (sysId, fullName) {
       var parts = fullName.split(" - ");
       var custName = parts[parts.length - 1].trim();
@@ -153,25 +152,37 @@
       if (f) {
         try { f.setValue("category", "application"); } catch (e) {}
       }
-      var catSelect = d.querySelector('select[id="incident.category"]');
+      var catSelect = d.getElementById("incident.category") || d.querySelector('select[name="incident.category"]');
       if (catSelect) {
         catSelect.value = "application";
         triggerEvents(catSelect);
       }
 
-      /* 2. Assigned To */
-      setRefField("incident.assigned_to", aName, aName);
-      setRefField("assigned_to", aName, aName);
+      /* 2. Assigned To (ใช้ User ID ถ้ามี) */
+      if (myUserId) {
+        setReference("incident.assigned_to", myUserId, aName);
+      } else {
+        setReference("incident.assigned_to", aName, aName);
+      }
 
-      /* 3. Business Application */
-      setRefField("incident.business_application", "SpectrumPro", "SpectrumPro");
-      setRefField("business_application", "SpectrumPro", "SpectrumPro");
-      setRefField("incident.u_business_application", "SpectrumPro", "SpectrumPro");
-      setRefField("u_business_application", "SpectrumPro", "SpectrumPro");
+      /* 3. Configuration Item */
+      setReference("incident.cmdb_ci", sysId, fullName);
+      var ciRaw = d.getElementById("incident.cmdb_ci");
+      if (ciRaw) {
+        ciRaw.value = sysId;
+        triggerEvents(ciRaw);
+      }
 
-      /* 4. Configuration Item */
-      setRefField("incident.cmdb_ci", sysId, fullName);
-      setRefField("cmdb_ci", sysId, fullName);
+      /* 4. Business Application */
+      var bAppDisp = d.getElementById("sys_display.incident.business_application") || d.getElementById("sys_display.incident.u_business_application");
+      if (bAppDisp) {
+        bAppDisp.value = "SpectrumPro";
+        triggerEvents(bAppDisp);
+      }
+      if (f) {
+        try { f.setValue("business_application", "SpectrumPro", "SpectrumPro"); } catch (e) {}
+        try { f.setValue("u_business_application", "SpectrumPro", "SpectrumPro"); } catch (e) {}
+      }
 
       /* 5. Customer & HealthTech */
       function fillCustomerAndHealthTech() {
@@ -205,23 +216,20 @@
             }
           }
         }
-        fillField(
-          [
-            'input[id="incident.u_customer"]',
-            'input[id="sys_display.incident.u_customer"]',
-            'input[id*="u_customer"]'
-          ],
-          custName
-        );
+        setFieldValue("incident.u_customer", custName);
+        var custDisp = d.getElementById("sys_display.incident.u_customer");
+        if (custDisp) {
+          custDisp.value = custName;
+          triggerEvents(custDisp);
+        }
       }
 
       fillCustomerAndHealthTech();
       setTimeout(fillCustomerAndHealthTech, 200);
-      setTimeout(fillCustomerAndHealthTech, 500);
       setTimeout(function () {
         fillCustomerAndHealthTech();
         clickUpdate();
-      }, 700);
+      }, 500);
     });
   } else {
     alert("ไม่พบหน้าจอ SCTASK หรือ Incident ครับ");
