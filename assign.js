@@ -90,14 +90,27 @@
   }
 
   function showModal(title, onConfirm) {
-    var oldModal = d.getElementById("auto_bu_modal") || document.getElementById("auto_bu_modal");
+    // 1. ตรวจสอบ Document ที่มี Body พร้อมใช้งานจริง
+    var targetDoc = (d && d.body) ? d : (document && document.body ? document : null);
+    if (!targetDoc || !targetDoc.body) {
+      targetDoc = window.top.document;
+    }
+
+    if (!targetDoc || !targetDoc.body) {
+      alert("ไม่พบหน้าจอสำหรับแสดงผล ป๊อปอัป");
+      return;
+    }
+
+    var oldModal = targetDoc.getElementById("auto_bu_modal");
     if (oldModal) oldModal.remove();
 
-    var targetDoc = d.body ? d : document;
     var modal = targetDoc.createElement("div");
+    if (!modal) return;
+
     modal.id = "auto_bu_modal";
-    modal.style =
+    modal.style.cssText =
       "position:fixed;top:15%;left:50%;transform:translateX(-50%);width:500px;max-width:92%;background:#fff;border:2px solid #2563eb;z-index:9999999;padding:22px;box-shadow:0 12px 36px rgba(0,0,0,0.4);border-radius:12px;font-family:sans-serif;box-sizing:border-box;";
+
     modal.innerHTML =
       '<h3 style="margin:0 0 12px 0;color:#2563eb;font-size:16px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">' +
       title +
@@ -112,25 +125,32 @@
     targetDoc.body.appendChild(modal);
 
     var sel = targetDoc.getElementById("auto_bu_select");
-    for (var j = 0; j < ciList.length; j++) {
-      var opt = targetDoc.createElement("option");
-      opt.value = ciList[j][1];
-      opt.text = ciList[j][0];
-      sel.appendChild(opt);
+    if (sel && typeof ciList !== "undefined") {
+      for (var j = 0; j < ciList.length; j++) {
+        var opt = targetDoc.createElement("option");
+        opt.value = ciList[j][1];
+        opt.text = ciList[j][0];
+        sel.appendChild(opt);
+      }
     }
 
-    targetDoc.getElementById("auto_bu_cancel").onclick = function () {
-      modal.remove();
-    };
+    var btnCancel = targetDoc.getElementById("auto_bu_cancel");
+    if (btnCancel) {
+      btnCancel.onclick = function () {
+        modal.remove();
+      };
+    }
 
-    targetDoc.getElementById("auto_bu_ok").onclick = function () {
-      var sysId = sel.value;
-      var fullName = sel.options[sel.selectedIndex].text;
-      modal.remove();
-      onConfirm(sysId, fullName);
-    };
+    var btnOk = targetDoc.getElementById("auto_bu_ok");
+    if (btnOk) {
+      btnOk.onclick = function () {
+        var sysId = sel ? sel.value : "";
+        var fullName = (sel && sel.selectedIndex >= 0) ? sel.options[sel.selectedIndex].text : "";
+        modal.remove();
+        onConfirm(sysId, fullName);
+      };
+    }
   }
-
   /* ตรวจสอบประเภทหน้าจอ */
   var tableName = (f && typeof f.getTableName === "function") ? f.getTableName() : "";
   var numVal = (d.querySelector('input[id*="number"],input[id*=".number"]') || {}).value || "";
