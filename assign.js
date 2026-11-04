@@ -22,10 +22,9 @@
     return false;
   }
 
-  /* ฟังก์ชันเซ็ต Reference โดยตรงอย่างปลอดภัย ไม่ทำให้เกิด Match not found */
   function applyReference(fieldName, sysId, displayName) {
     displayName = displayName || sysId;
-    if (f && typeof f.setValue === "function") {
+    if (f && typeof f.setValue === "function" && sysId) {
       try {
         f.setValue(fieldName, sysId, displayName);
       } catch (e) {}
@@ -35,7 +34,7 @@
       disp.value = displayName;
     }
     var raw = d.getElementById(fieldName) || d.querySelector('input[name="' + fieldName + '"]:not([id*="sys_display"])');
-    if (raw) {
+    if (raw && sysId) {
       raw.value = sysId;
     }
 
@@ -70,6 +69,15 @@
 
   function clickUpdate() {
     setTimeout(function () {
+      if (f && typeof f.getFormElement === "function" && typeof w.gsftSubmit === "function") {
+        try {
+          var formEl = f.getFormElement();
+          if (formEl) {
+            w.gsftSubmit(null, formEl, "sysverb_update");
+            return;
+          }
+        } catch (e) {}
+      }
       var updateBtn =
         d.getElementById("sysverb_update") ||
         d.querySelector('button[id="sysverb_update"], button[name="not_important"]');
@@ -82,10 +90,11 @@
   }
 
   function showModal(title, onConfirm) {
-    var oldModal = d.getElementById("auto_bu_modal");
+    var oldModal = d.getElementById("auto_bu_modal") || document.getElementById("auto_bu_modal");
     if (oldModal) oldModal.remove();
 
-    var modal = d.createElement("div");
+    var targetDoc = d.body ? d : document;
+    var modal = targetDoc.createElement("div");
     modal.id = "auto_bu_modal";
     modal.style =
       "position:fixed;top:15%;left:50%;transform:translateX(-50%);width:500px;max-width:92%;background:#fff;border:2px solid #2563eb;z-index:9999999;padding:22px;box-shadow:0 12px 36px rgba(0,0,0,0.4);border-radius:12px;font-family:sans-serif;box-sizing:border-box;";
@@ -100,21 +109,21 @@
       '<button id="auto_bu_ok" style="padding:9px 22px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;">Confirm & Update</button>' +
       "</div>";
 
-    d.body.appendChild(modal);
+    targetDoc.body.appendChild(modal);
 
-    var sel = d.getElementById("auto_bu_select");
+    var sel = targetDoc.getElementById("auto_bu_select");
     for (var j = 0; j < ciList.length; j++) {
-      var opt = d.createElement("option");
+      var opt = targetDoc.createElement("option");
       opt.value = ciList[j][1];
       opt.text = ciList[j][0];
       sel.appendChild(opt);
     }
 
-    d.getElementById("auto_bu_cancel").onclick = function () {
+    targetDoc.getElementById("auto_bu_cancel").onclick = function () {
       modal.remove();
     };
 
-    d.getElementById("auto_bu_ok").onclick = function () {
+    targetDoc.getElementById("auto_bu_ok").onclick = function () {
       var sysId = sel.value;
       var fullName = sel.options[sel.selectedIndex].text;
       modal.remove();
@@ -122,13 +131,16 @@
     };
   }
 
+  /* ตรวจสอบประเภทหน้าจอ */
+  var tableName = (f && typeof f.getTableName === "function") ? f.getTableName() : "";
   var numVal = (d.querySelector('input[id*="number"],input[id*=".number"]') || {}).value || "";
-  var curUrl = w.location.href;
-  var isTask = numVal.indexOf("SCTASK") !== -1 || curUrl.indexOf("sc_task") !== -1;
-  var isInc = numVal.indexOf("INC") !== -1 || curUrl.indexOf("incident") !== -1;
+  var curUrl = (w.location.href || "") + (window.location.href || "");
 
-  /* เช็คตัวตนคนที่กำลังล็อกอินอยู่หน้านั้นแบบอัตโนมัติ */
-  var userObj = w.g_user || (window.top && window.top.g_user) || {};
+  var isTask = tableName === "sc_task" || numVal.indexOf("SCTASK") !== -1 || curUrl.indexOf("sc_task") !== -1;
+  var isInc = tableName === "incident" || numVal.indexOf("INC") !== -1 || curUrl.indexOf("incident") !== -1;
+
+  /* ตรวจหาข้อมูล User ปัจจุบัน */
+  var userObj = w.g_user || (window.top && window.top.g_user) || window.g_user || {};
   var currentUserId = userObj.userID || "";
   var currentDisplayName = (userObj.firstName && userObj.lastName)
     ? (userObj.firstName + " " + userObj.lastName).trim()
@@ -137,12 +149,18 @@
   var spectrumProSysId = "2b53198edbef1850aabaaab35b96199f";
 
   if (isTask) {
-    applyReference("assigned_to", currentUserId, currentDisplayName);
-    applyReference("sc_task.assigned_to", currentUserId, currentDisplayName);
-
     showModal("⚡ JJ_Se: Catalog Task Setup", function (sysId, fullName) {
+      if (currentUserId) {
+        applyReference("assigned_to", currentUserId, currentDisplayName);
+        applyReference("sc_task.assigned_to", currentUserId, currentDisplayName);
+      } else {
+        var disp = d.getElementById("sys_display.sc_task.assigned_to") || d.getElementById("sys_display.assigned_to");
+        if (disp) disp.value = currentDisplayName;
+      }
+
       applyReference("cmdb_ci", sysId, fullName);
       applyReference("sc_task.cmdb_ci", sysId, fullName);
+
       clickUpdate();
     });
   } else if (isInc) {
@@ -150,7 +168,6 @@
       var parts = fullName.split(" - ");
       var custName = parts[parts.length - 1].trim();
 
-      /* 1. Category */
       if (f) {
         try { f.setValue("category", "application"); } catch (e) {}
       }
@@ -160,15 +177,17 @@
         triggerEvents(catSelect);
       }
 
-      /* 2. Current Assigned to ดึงชื่อคนที่กดปุ่มอัตโนมัติ */
-      applyReference("assigned_to", currentUserId, currentDisplayName);
-      applyReference("incident.assigned_to", currentUserId, currentDisplayName);
+      if (currentUserId) {
+        applyReference("assigned_to", currentUserId, currentDisplayName);
+        applyReference("incident.assigned_to", currentUserId, currentDisplayName);
+      } else {
+        var disp = d.getElementById("sys_display.incident.assigned_to") || d.getElementById("sys_display.assigned_to");
+        if (disp) disp.value = currentDisplayName;
+      }
 
-      /* 3. Business Application */
       applyReference("u_business_application", spectrumProSysId, "SpectrumPro");
       applyReference("incident.u_business_application", spectrumProSysId, "SpectrumPro");
 
-      /* 4. Customer & HealthTech */
       var htContainer = d.getElementById("element.incident.u_healthtech_customer_scope");
       if (htContainer) {
         htContainer.style.display = "";
@@ -203,16 +222,14 @@
         custDisp.value = custName;
       }
 
-      /* 5. Configuration Item หน่วงเวลา 500ms ป้องกันการชนกับ Business App */
       setTimeout(function () {
         applyReference("cmdb_ci", sysId, fullName);
         applyReference("incident.cmdb_ci", sysId, fullName);
       }, 500);
 
-      /* 6. กด Update อัตโนมัติ */
       clickUpdate();
     });
   } else {
-    alert("ไม่พบหน้าจอ SCTASK หรือ Incident ครับ");
+    alert("ไม่พบหน้าจอ SCTASK หรือ Incident (TableName: " + tableName + ")");
   }
 })();
