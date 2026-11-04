@@ -48,29 +48,24 @@
   }
 
   var ciList = [
-    ["SpectrumPro 2.x - Laem Chabang - Accelink", "cf24ae13eb2196dc0ddcf4f1cad0cdcb"],
-    ["SpectrumPro 2.x - Laem Chabang - Advanced Energy", "8034ee53eb2196dc0ddcf4f1cad0cddc"],
-    ["SpectrumPro 2.x - Laem Chabang - All Customers", "4e7a806a1bc0f5dcbe48eca7624bcbda"],
-    ["SpectrumPro 2.x - Laem Chabang - Center", "7c2a08e61bc0f5dcbe48eca7624bcb94"],
-    ["SpectrumPro 2.x - Laem Chabang - Central (CTN/MSD)", "22ba35af932f96908f06bfc01bba1072"],
-    ["SpectrumPro 2.x - Laem Chabang - Central (OBI/ABF)", "4076d75bc6604bdc4f765313a3b4fc45"],
-    ["SpectrumPro 2.x - Laem Chabang - Ciena", "5ef2c71b1bc3659059fdedf3604bcb1f"],
-    ["SpectrumPro 2.x - Laem Chabang - CruiseBay", "08be232b3b33d2d0ddfdd88c24e45a51"],
-    ["SpectrumPro 2.x - Laem Chabang - Dellcom", "a6f2c71b1bc3659059fdedf3604bcb5d"],
-    ["SpectrumPro 2.x - Laem Chabang - EMC", "aaf2c71b1bc3659059fdedf3604bcb62"],
-    ["SpectrumPro 2.x - Laem Chabang - Ericson - Prod", "615d8accc807f6507e4c767dc0f5c441"],
-    ["SpectrumPro 2.x - Laem Chabang - Meta", "76f2c71b1bc3659059fdedf3604bcba1"],
-    ["SpectrumPro 2.x - Laem Chabang - Oracle", "cae940261bc0f5dcbe48eca7624bcb24"],
-    ["SpectrumPro 2.x - Laem Chabang - Oracle CAMS", "82a5f70d1babe91c4d75a6c1604bcb17"],
-    ["SpectrumPro 2.x - Laem Chabang - Ploycom Audio", "a2f2c71b1bc3659059fdedf3604bcb92"],
-    ["SpectrumPro 2.x - Laem Chabang - Ploycom RMX", "36f2c71b1bc3659059fdedf3604bcb9c"],
-    ["SpectrumPro 2.x - Laem Chabang - Ploycom Video", "e2f2c71b1bc3659059fdedf3604bcb97"],
-    ["SpectrumPro 2.x - Laem Chabang - Polycom RMX", "a147575332a04bdca40707a4a56e65ba"],
-    ["SpectrumPro 2.x - Laem Chabang - Polycom Video", "4f07939f9f604bdc676b7b97c0b278ba"],
-    ["SpectrumPro 2.x - Laem Chabang - Spirent", "d2f2c71b1bc3659059fdedf3604bcb4e"],
-    ["SpectrumPro 2.x - Laem Chabang - TDC", "0f9ef91d93efd290311db6cd1dba10d7"],
-    ["SpectrumPro 2.x - Laem Chabang - Viavi", "47791a493bdd2e14ddfdd88c24e45aa4"],
-    ["SpectrumPro 2.x - Laem Chabang - Vision", "abb61fdb42604bdcdfe897be34e9a968"]
+    ["SpectrumPro 2.x - Laem Chabang - Google": "62f2c71b1bc3659059fdedf3604bcb8d"],
+["SpectrumPro 2.x - Laem Chabang - Meta": "76f2c71b1bc3659059fdedf3604bcba1"],
+["SpectrumPro 2.x - Laem Chabang - Kapok": "22f2c71b1bc3659059fdedf3604bcb88"],
+["SpectrumPro 2.x - Laem Chabang - CruiseBay": "08be232b3b33d2d0ddfdd88c24e45a51"],
+["SpectrumPro 2.x - Laem Chabang - Ciena": "5ef2c71b1bc3659059fdedf3604bcb1f"],
+["SpectrumPro 2.x - Laem Chabang - JDM 1j": "6ef2c71b1bc3659059fdedf3604bcb71"],
+["SpectrumPro 2.x - Laem Chabang - JDM DC": "aef2c71b1bc3659059fdedf3604bcb76"],
+["SpectrumPro 2.x - Laem Chabang - All Customers": "4e7a806a1bc0f5dcbe48eca7624bcbda"],
+["SpectrumPro 2.x - Laem Chabang - Center": "7c2a08e61bc0f5dcbe48eca7624bcb94"],
+["SpectrumPro 2.x - Laem Chabang - Central (CTN/MSD)": "22ba35af932f96908f06bfc01bba1072"],
+["SpectrumPro 2.x - Laem Chabang - Central (OBI/ABF)": "4076d75bc6604bdc4f765313a3b4fc45"],
+["SpectrumPro 2.x - Laem Chabang - Dellcom": "a6f2c71b1bc3659059fdedf3604bcb5d"],
+["SpectrumPro 2.x - Laem Chabang - EMC": "aaf2c71b1bc3659059fdedf3604bcb62"],  
+["SpectrumPro 2.x - Laem Chabang - KeySight": "3aa1c8345b1f8bd8f6923cb70979d172"],  
+["SpectrumPro 2.x - Laem Chabang - Spirent": "d2f2c71b1bc3659059fdedf3604bcb4e"],
+["SpectrumPro 2.x - Laem Chabang - TDC": "0f9ef91d93efd290311db6cd1dba10d7"],
+["SpectrumPro 2.x - Laem Chabang - Viavi": "47791a493bdd2e14ddfdd88c24e45aa4"],
+["SpectrumPro 2.x - Laem Chabang - Vision": "abb61fdb42604bdcdfe897be34e9a968"]
   ];
 
   function clickUpdate() {
