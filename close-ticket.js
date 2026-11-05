@@ -12,7 +12,7 @@
   var oldScript = document.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
-  /* 1. ตรวจสอบประเภทหน้าอย่างแม่นยำ */
+  /* 1. ตรวจสอบประเภทหน้า */
   var tableName = (f && typeof f.getTableName === "function") ? f.getTableName() : "";
   var curPageUrl = (targetWin.location.href || "") + (window.location.href || "");
   var numVal = "";
@@ -275,7 +275,7 @@
       var selText = catSelect.options[catSelect.selectedIndex] ? catSelect.options[catSelect.selectedIndex].text : "";
       var tName = matched.name || "";
 
-      // รวมข้อความทั้งหมดมาตรวจจับ Cancel
+      // ตรวจจับคำว่า cancel หรือ cancal จากทุกจุด
       var fullCheck = (curCat + " " + selText + " " + tName).toLowerCase();
       var isCancelTicket = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
 
@@ -285,7 +285,7 @@
         var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea, textarea[id*='comments']");
 
         if (isCancelTicket) {
-          // เซ็ตสถานะเป็น Canceled (8)
+          // สั่งเปลี่ยน State เป็น Canceled (8) ผ่านทั้ง g_form และ DOM
           if (f) {
             try { f.setValue("state", "8"); } catch (e) {}
             try { f.setValue("comments", val); } catch (e) {}
@@ -297,11 +297,11 @@
           }
           setValToElem(commentBox, val);
 
-          // ปิดกล่องทันที ไม่ยุ่งกับ close_notes เพื่อป้องกัน script ของระบบ crash
+          // ปิด Modal ทันที (ไม่ยุ่งกับ close_notes เพื่อเลี่ยง client script error)
           div.remove();
           return;
         } else {
-          // จัดการเคส Resolve (6)
+          // โหมด Resolve ปกติ (State 6)
           var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
           if (f) {
             try { f.setValue("comments", ""); } catch (e) {}
