@@ -270,8 +270,9 @@
         val = repDesc(val, getDesc());
         var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
         var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea");
-
-        if (curCat.toLowerCase().indexOf("cancel") !== -1) {
+         var isCancelTicket = curCat.toLowerCase().indexOf("cancel") !== -1 || curCat.toLowerCase().indexOf("cancal") !== -1;
+        
+        if (isCancelTicket) {
           if (f) {
             try { f.setValue("state", "8"); } catch (e) {}
             try { f.setValue("comments", val); } catch (e) {}
