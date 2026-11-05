@@ -270,7 +270,14 @@
         val = repDesc(val, getDesc());
         var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
         var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea");
-         var isCancelTicket = curCat.toLowerCase().indexOf("cancel") !== -1 || curCat.toLowerCase().indexOf("cancal") !== -1;
+         
+        var selCatText = (catSelect.options[catSelect.selectedIndex] ? catSelect.options[catSelect.selectedIndex].text : "") + " " + (catSelect.value || "");
+        var templateName = matched ? (matched.name || "") : "";
+        var checkText = (selCatText + " " + templateName).toLowerCase();
+        
+        
+        
+        var isCancelTicket = curCat.toLowerCase().indexOf("cancel") !== -1 || curCat.toLowerCase().indexOf("cancal") !== -1;
         
         if (isCancelTicket) {
           if (f) {
