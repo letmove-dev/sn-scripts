@@ -263,28 +263,31 @@
       }
 
       var val = matched.content;
-      var curCat = catSelect.value;
+      var curCat = catSelect.value || "";
+      var selText = catSelect.options[catSelect.selectedIndex] ? catSelect.options[catSelect.selectedIndex].text : "";
+      var tName = matched.name || "";
+
+      // รวมข้อความทั้งหมดมาตรวจ
+      var fullCheck = (curCat + " " + selText + " " + tName).toLowerCase();
+      var isCancelTicket = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
+
+      console.log("DEBUG -> isIncidentPage:", isIncidentPage);
+      console.log("DEBUG -> fullCheck:", fullCheck);
+      console.log("DEBUG -> isCancelTicket:", isCancelTicket);
 
       /* จัดการหน้า Incident */
       if (isIncidentPage) {
         val = repDesc(val, getDesc());
         var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
-        var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea");
-         
-        var selCatText = (catSelect.options[catSelect.selectedIndex] ? catSelect.options[catSelect.selectedIndex].text : "") + " " + (catSelect.value || "");
-        var templateName = matched ? (matched.name || "") : "";
-        var checkText = (selCatText + " " + templateName).toLowerCase();
-        
-        
-        
-        var isCancelTicket = curCat.toLowerCase().indexOf("cancel") !== -1 || curCat.toLowerCase().indexOf("cancal") !== -1;
-        
+        var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea, textarea[id*='comments']");
+
         if (isCancelTicket) {
+          console.log(">>> เข้าเงื่อนไข CANCEL เรียบร้อย <<<");
           if (f) {
             try { f.setValue("state", "8"); } catch (e) {}
             try { f.setValue("comments", val); } catch (e) {}
           }
-          var stateEl = targetDoc.querySelector('select[id="incident.state"]');
+          var stateEl = targetDoc.querySelector('select[id="incident.state"], select[name="incident.state"], select[id*=".state"]');
           if (stateEl) {
             stateEl.value = "8";
             stateEl.dispatchEvent(new Event("change", { bubbles: true }));
@@ -292,6 +295,7 @@
           setValToElem(commentBox, val);
           if (closeBox) setValToElem(closeBox, "");
         } else {
+          console.log(">>> เข้าเงื่อนไข RESOLVE <<<");
           if (f) {
             try { f.setValue("comments", ""); } catch (e) {}
             try { f.setValue("state", "6"); } catch (e) {}
@@ -299,7 +303,7 @@
           setValToElem(closeBox, val);
           if (commentBox) setValToElem(commentBox, "");
 
-          var incStateEl = targetDoc.querySelector('select[id="incident.state"]');
+          var incStateEl = targetDoc.querySelector('select[id="incident.state"], select[name="incident.state"], select[id*=".state"]');
           if (incStateEl) {
             incStateEl.value = "6";
             incStateEl.dispatchEvent(new Event("change", { bubbles: true }));
