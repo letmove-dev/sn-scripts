@@ -260,7 +260,7 @@
     itemSelect.onchange = updatePreview;
     updateSubItems();
 
-    targetDoc.getElementById("tmpOk").onclick = function () {
+   targetDoc.getElementById("tmpOk").onclick = function () {
       var items = catMap[catSelect.value] || [];
       var matched = items.find(function (it) {
         return it.rowId === itemSelect.value;
@@ -275,7 +275,7 @@
       var selText = catSelect.options[catSelect.selectedIndex] ? catSelect.options[catSelect.selectedIndex].text : "";
       var tName = matched.name || "";
 
-      // ตรวจจับคำว่า cancel หรือ cancal จากทุกจุด
+      // ตรวจสอบเงื่อนไขตามที่ทดสอบผ่านแล้วใน Console
       var fullCheck = (curCat + " " + selText + " " + tName).toLowerCase();
       var isCancelTicket = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
 
@@ -285,7 +285,7 @@
         var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea, textarea[id*='comments']");
 
         if (isCancelTicket) {
-          // สั่งเปลี่ยน State เป็น Canceled (8) ผ่านทั้ง g_form และ DOM
+          // 1. ตั้งค่า State เป็น Canceled (8)
           if (f) {
             try { f.setValue("state", "8"); } catch (e) {}
             try { f.setValue("comments", val); } catch (e) {}
@@ -295,13 +295,15 @@
             stateEl.value = "8";
             stateEl.dispatchEvent(new Event("change", { bubbles: true }));
           }
+
+          // 2. ใส่ข้อความลงช่อง Comments
           setValToElem(commentBox, val);
 
-          // ปิด Modal ทันที (ไม่ยุ่งกับ close_notes เพื่อเลี่ยง client script error)
+          // 3. ปิดหน้าต่างทันที (ไม่แตะต้องช่อง close_notes เพื่อป้องกัน script crash)
           div.remove();
           return;
         } else {
-          // โหมด Resolve ปกติ (State 6)
+          // โหมด Resolve (State 6)
           var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
           if (f) {
             try { f.setValue("comments", ""); } catch (e) {}
