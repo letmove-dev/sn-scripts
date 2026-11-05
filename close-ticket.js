@@ -12,22 +12,30 @@
   var oldScript = document.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
-  /* ตรวจสอบประเภทหน้าอัตโนมัติ */
+  /* 1. ตรวจสอบประเภทหน้าอย่างแม่นยำ */
+  var tableName = (f && typeof f.getTableName === "function") ? f.getTableName() : "";
+  var curPageUrl = (targetWin.location.href || "") + (window.location.href || "");
   var numVal = "";
   var numInput = targetDoc.querySelector('input[id*=".number"]');
   if (numInput) numVal = numInput.value;
 
-  var isTaskPage =
-    numVal.indexOf("SCTASK") !== -1 ||
-    targetDoc.querySelector('input[id="sc_task.number"]') !== null;
-  var isRitmPage =
-    numVal.indexOf("RITM") !== -1 ||
-    targetDoc.querySelector('textarea[id="sc_req_item.u_cancel_reason"]') !== null;
   var isIncidentPage =
+    tableName === "incident" ||
+    curPageUrl.indexOf("incident.do") !== -1 ||
     numVal.indexOf("INC") !== -1 ||
     targetDoc.querySelector('input[id="incident.number"]') !== null;
 
-  /* ตรวจสอบเคสหน่วงข้อความข้ามหน้าของ Ticket Cancal ไปยัง RITM */
+  var isTaskPage =
+    tableName === "sc_task" ||
+    curPageUrl.indexOf("sc_task.do") !== -1 ||
+    numVal.indexOf("SCTASK") !== -1;
+
+  var isRitmPage =
+    tableName === "sc_req_item" ||
+    numVal.indexOf("RITM") !== -1 ||
+    targetDoc.querySelector('textarea[id="sc_req_item.u_cancel_reason"]') !== null;
+
+  /* ตรวจสอบเคสส่งค่าข้ามหน้าไปยัง RITM */
   var crBox = targetDoc.querySelector(
     'textarea[id="sc_req_item.u_cancel_reason"],textarea[name="sc_req_item.u_cancel_reason"]'
   );
@@ -267,22 +275,17 @@
       var selText = catSelect.options[catSelect.selectedIndex] ? catSelect.options[catSelect.selectedIndex].text : "";
       var tName = matched.name || "";
 
-      // รวมข้อความทั้งหมดมาตรวจ
+      // รวมข้อความทั้งหมดมาตรวจจับ Cancel
       var fullCheck = (curCat + " " + selText + " " + tName).toLowerCase();
       var isCancelTicket = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
-
-      console.log("DEBUG -> isIncidentPage:", isIncidentPage);
-      console.log("DEBUG -> fullCheck:", fullCheck);
-      console.log("DEBUG -> isCancelTicket:", isCancelTicket);
 
       /* จัดการหน้า Incident */
       if (isIncidentPage) {
         val = repDesc(val, getDesc());
-        var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
         var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea, textarea[id*='comments']");
 
         if (isCancelTicket) {
-          console.log(">>> เข้าเงื่อนไข CANCEL เรียบร้อย <<<");
+          // เซ็ตสถานะเป็น Canceled (8)
           if (f) {
             try { f.setValue("state", "8"); } catch (e) {}
             try { f.setValue("comments", val); } catch (e) {}
@@ -293,9 +296,13 @@
             stateEl.dispatchEvent(new Event("change", { bubbles: true }));
           }
           setValToElem(commentBox, val);
-          if (closeBox) setValToElem(closeBox, "");
+
+          // ปิดกล่องทันที ไม่ยุ่งกับ close_notes เพื่อป้องกัน script ของระบบ crash
+          div.remove();
+          return;
         } else {
-          console.log(">>> เข้าเงื่อนไข RESOLVE <<<");
+          // จัดการเคส Resolve (6)
+          var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
           if (f) {
             try { f.setValue("comments", ""); } catch (e) {}
             try { f.setValue("state", "6"); } catch (e) {}
@@ -347,7 +354,7 @@
 
       /* จัดการหน้า SCTASK / RITM */
       var isSR = curCat.toLowerCase().indexOf("service request") !== -1;
-      var isCan = curCat.toLowerCase().indexOf("cancel") !== -1 || curCat.toLowerCase().indexOf("cancal") !== -1;
+      var isCan = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
 
       if (isSR) {
         val = repBU(repDesc(val, getBJ()), getBUFromCI());
