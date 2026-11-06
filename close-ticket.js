@@ -160,7 +160,7 @@
     return lines.join("\n");
   }
 
-  /* URL Web App จาก Google Docs ที่ทดสอบผ่าน 67 รายการ */
+  /* URL Web App จาก Google Docs */
   var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlSH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
@@ -170,7 +170,7 @@
   div.innerHTML =
     '<h3 style="margin:0 0 14px 0;color:#2563eb;border-bottom:1px solid #e2e8f0;padding-bottom:10px;font-size:17px;">ServiceNow Template Database</h3>' +
     '<label style="font-size:12px;color:#64748b;font-weight:bold;">1. Category:</label>' +
-    '<select id="tmpCatSelect" style="width:100%;padding:10px;margin:6px 0 12px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:#f8fafc;box-sizing:border-box;"><option>กำลังโหลด...</option></select>' +
+    '<select id="tmpCatSelect" style="width:100%;padding:10px;margin:6px 0 12px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:#f8fafc;box-sizing:border-box;"><option>กำลังโหลดรายการ...</option></select>' +
     '<label style="font-size:12px;color:#64748b;font-weight:bold;">2. Template:</label>' +
     '<select id="tmpItemSelect" style="width:100%;padding:10px;margin:6px 0 12px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:#f8fafc;box-sizing:border-box;"><option>-- รอเลือก --</option></select>' +
     '<label style="font-size:12px;color:#64748b;font-weight:bold;">Preview:</label>' +
@@ -398,13 +398,27 @@
 
   targetWin.__tmp_loading = true;
 
-  /* ใช้ Callback แบบเดียวกับท่อนทดสอบใน Console ที่รันผ่าน */
+  /* ตรวจสอบข้อมูลในแคชเครื่องก่อน ถ้าเคยโหลดได้ 67 รายการแล้วให้นำมาใช้ทันที */
+  try {
+    var cachedData = localStorage.getItem("__sn_templates_cache");
+    if (cachedData) {
+      var parsed = JSON.parse(cachedData);
+      if (parsed && parsed.length >= 60) {
+        populateUI(parsed);
+      }
+    }
+  } catch(e) {}
+
+  /* กำหนด Callback */
   var testCb = "inspect_data_" + Date.now();
-  window[testCb] = function (res) {
+  window[testCb] = window.top[testCb] = targetWin[testCb] = function (res) {
+    try {
+      localStorage.setItem("__sn_templates_cache", JSON.stringify(res));
+    } catch(e) {}
     populateUI(res);
   };
 
-  /* สร้าง Script Tag และแทรกลงใน document.body ของหน้าต่างปัจจุบัน (ตรงตามคำสั่งทดสอบเป๊ะๆ) */
+  /* สร้าง Script Tag โดยลบ onerror ที่คอยเด้งขัดจังหวะออก */
   var s = document.createElement("script");
   s.id = "tmp_jsonp_script";
   s.src = webAppUrl + "?prefix=" + testCb + "&t=" + Date.now();
