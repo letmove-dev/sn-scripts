@@ -160,8 +160,8 @@
     return lines.join("\n");
   }
 
-  /* URL Web App จาก Google Docs */
-  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlSH5Qjf5ZQ/exec";
+  /* URL Web App จาก Google Docs ที่ถูกต้อง 100% ตามภาพ */
+  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlsH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
   div.id = "tmp_modal_box";
@@ -398,27 +398,13 @@
 
   targetWin.__tmp_loading = true;
 
-  /* ตรวจสอบข้อมูลในแคชเครื่องก่อน ถ้าเคยโหลดได้ 67 รายการแล้วให้นำมาใช้ทันที */
-  try {
-    var cachedData = localStorage.getItem("__sn_templates_cache");
-    if (cachedData) {
-      var parsed = JSON.parse(cachedData);
-      if (parsed && parsed.length >= 60) {
-        populateUI(parsed);
-      }
-    }
-  } catch(e) {}
-
-  /* กำหนด Callback */
+  /* ใช้ testCb แบบเดียวกับ Console ทุกประการ */
   var testCb = "inspect_data_" + Date.now();
   window[testCb] = window.top[testCb] = targetWin[testCb] = function (res) {
-    try {
-      localStorage.setItem("__sn_templates_cache", JSON.stringify(res));
-    } catch(e) {}
     populateUI(res);
   };
 
-  /* สร้าง Script Tag โดยลบ onerror ที่คอยเด้งขัดจังหวะออก */
+  /* แทรกลง document.body ตรงๆ ตามคำสั่ง Console ที่รันผ่าน */
   var s = document.createElement("script");
   s.id = "tmp_jsonp_script";
   s.src = webAppUrl + "?prefix=" + testCb + "&t=" + Date.now();
