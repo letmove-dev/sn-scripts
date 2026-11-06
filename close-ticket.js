@@ -12,7 +12,7 @@
   var oldScript = document.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
-  /* 1. ตรวจสอบประเภทหน้า */
+  /* 1. Barbaacha Gosa Fuulaa (Page detection) */
   var tableName = (f && typeof f.getTableName === "function") ? f.getTableName() : "";
   var curPageUrl = (targetWin.location.href || "") + (window.location.href || "");
   var numVal = "";
@@ -35,7 +35,7 @@
     numVal.indexOf("RITM") !== -1 ||
     targetDoc.querySelector('textarea[id="sc_req_item.u_cancel_reason"]') !== null;
 
-  /* ตรวจสอบเคสส่งค่าข้ามหน้าไปยัง RITM */
+  /* RITM Cancel Reason dabarsuu */
   var crBox = targetDoc.querySelector(
     'textarea[id="sc_req_item.u_cancel_reason"],textarea[name="sc_req_item.u_cancel_reason"]'
   );
@@ -60,7 +60,7 @@
     return;
   }
 
-  /* กรองหมวดหมู่ตามประเภทหน้า */
+  /* Ramaddii hayyamame (Allowed Categories) */
   var allowedCats = isIncidentPage
     ? ["Server slow", "Ticket Cancal", "Incident Request"]
     : ["Ticket Cancal", "Service Request"];
@@ -165,7 +165,7 @@
     return lines.join("\n");
   }
 
-var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec";
+  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
   div.id = "tmp_modal_box";
@@ -259,7 +259,7 @@ var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc
     itemSelect.onchange = updatePreview;
     updateSubItems();
 
-   targetDoc.getElementById("tmpOk").onclick = function () {
+    targetDoc.getElementById("tmpOk").onclick = function () {
       var items = catMap[catSelect.value] || [];
       var matched = items.find(function (it) {
         return it.rowId === itemSelect.value;
@@ -274,17 +274,15 @@ var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc
       var selText = catSelect.options[catSelect.selectedIndex] ? catSelect.options[catSelect.selectedIndex].text : "";
       var tName = matched.name || "";
 
-      // ตรวจสอบเงื่อนไขตามที่ทดสอบผ่านแล้วใน Console
       var fullCheck = (curCat + " " + selText + " " + tName).toLowerCase();
       var isCancelTicket = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
 
-      /* จัดการหน้า Incident */
+      /* Fuula Incident qindeessuu */
       if (isIncidentPage) {
         val = repDesc(val, getDesc());
         var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea, textarea[id*='comments']");
 
         if (isCancelTicket) {
-          // 1. ตั้งค่า State เป็น Canceled (8)
           if (f) {
             try { f.setValue("state", "8"); } catch (e) {}
             try { f.setValue("comments", val); } catch (e) {}
@@ -294,15 +292,10 @@ var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc
             stateEl.value = "8";
             stateEl.dispatchEvent(new Event("change", { bubbles: true }));
           }
-
-          // 2. ใส่ข้อความลงช่อง Comments
           setValToElem(commentBox, val);
-
-          // 3. ปิดหน้าต่างทันที (ไม่แตะต้องช่อง close_notes เพื่อป้องกัน script crash)
           div.remove();
           return;
         } else {
-          // โหมด Resolve (State 6)
           var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
           if (f) {
             try { f.setValue("comments", ""); } catch (e) {}
@@ -353,7 +346,7 @@ var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc
         return;
       }
 
-      /* จัดการหน้า SCTASK / RITM */
+      /* Fuula SCTASK / RITM qindeessuu */
       var isSR = curCat.toLowerCase().indexOf("service request") !== -1;
       var isCan = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
 
@@ -413,12 +406,23 @@ var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc
   }
 
   targetWin.__tmp_loading = true;
-  window.callback = targetWin.callback = function (d) {
+
+  /* Callback iddoowwan hunda keessatti akka argamu taasisuu */
+  var cbName = "sn_callback_" + Math.floor(Math.random() * 1000000);
+  window[cbName] = targetWin[cbName] = window.top[cbName] = function (d) {
     populateUI(d);
+    try { delete window[cbName]; } catch(e) {}
+    try { delete targetWin[cbName]; } catch(e) {}
+    try { delete window.top[cbName]; } catch(e) {}
   };
 
   var sc = document.createElement("script");
   sc.id = "tmp_jsonp_script";
-  sc.src = webAppUrl + "?prefix=callback&t=" + Date.now();
+  sc.src = webAppUrl + (webAppUrl.indexOf("?") !== -1 ? "&" : "?") + "prefix=" + cbName + "&t=" + Date.now();
+  sc.onerror = function() {
+    alert("Google Web App irraa odeeffannoo fiduun hin danda'amne!");
+    targetWin.__tmp_loading = false;
+    div.remove();
+  };
   document.body.appendChild(sc);
 })();
