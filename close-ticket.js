@@ -9,7 +9,7 @@
 
   var oldBox = targetDoc.getElementById("tmp_modal_box");
   if (oldBox) oldBox.remove();
-  var oldScript = document.getElementById("tmp_jsonp_script") || targetDoc.getElementById("tmp_jsonp_script");
+  var oldScript = targetDoc.getElementById("tmp_jsonp_script") || document.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
   /* 1. ตรวจสอบประเภทหน้า */
@@ -160,7 +160,7 @@
     return lines.join("\n");
   }
 
-  /* URL Web App จาก Google Docs ที่พิสูจน์แล้วว่าส่งข้อมูล 67 รายการ */
+  /* URL Web App จาก Google Docs ที่ทดสอบผ่าน 67 รายการแล้ว */
   var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlSH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
@@ -170,9 +170,9 @@
   div.innerHTML =
     '<h3 style="margin:0 0 14px 0;color:#2563eb;border-bottom:1px solid #e2e8f0;padding-bottom:10px;font-size:17px;">ServiceNow Template Database</h3>' +
     '<label style="font-size:12px;color:#64748b;font-weight:bold;">1. Category:</label>' +
-    '<select id="tmpCatSelect" style="width:100%;padding:10px;margin:6px 0 12px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:#f8fafc;box-sizing:border-box;"></select>' +
+    '<select id="tmpCatSelect" style="width:100%;padding:10px;margin:6px 0 12px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:#f8fafc;box-sizing:border-box;"><option>กำลังโหลดรายการ...</option></select>' +
     '<label style="font-size:12px;color:#64748b;font-weight:bold;">2. Template:</label>' +
-    '<select id="tmpItemSelect" style="width:100%;padding:10px;margin:6px 0 12px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:#f8fafc;box-sizing:border-box;"></select>' +
+    '<select id="tmpItemSelect" style="width:100%;padding:10px;margin:6px 0 12px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:#f8fafc;box-sizing:border-box;"><option>-- รอเลือก --</option></select>' +
     '<label style="font-size:12px;color:#64748b;font-weight:bold;">Preview:</label>' +
     '<textarea id="tmpPreview" readonly style="width:100%;height:160px;margin:6px 0 16px 0;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#f1f5f9;box-sizing:border-box;resize:vertical;font-family:monospace;"></textarea>' +
     '<div style="text-align:right;"><button id="tmpCancel" style="padding:9px 18px;margin-right:8px;background:#e2e8f0;color:#334155;border:none;border-radius:6px;cursor:pointer;font-weight:bold;">Cancel</button>' +
@@ -199,7 +199,6 @@
     catSelect.innerHTML = "";
     var catMap = {};
 
-    /* รวมทุกหมวดหมู่ ไม่มีการตัดกรองทิ้ง */
     list.forEach(function (item, idx) {
       var c = (item.category && item.category.trim()) ? item.category.trim() : "General";
       if (!catMap[c]) catMap[c] = [];
@@ -399,13 +398,20 @@
 
   targetWin.__tmp_loading = true;
 
+  /* กำหนด Callback ไว้ที่ Top Window เท่านั้น (จุดเดียวกับที่ F12 console รันผ่าน) */
   var cbName = "sn_load_all_" + Date.now();
-  window[cbName] = targetWin[cbName] = window.top[cbName] = function (d) {
+  window.top[cbName] = window[cbName] = targetWin[cbName] = function (d) {
     populateUI(d);
-    try { delete window[cbName]; delete targetWin[cbName]; delete window.top[cbName]; } catch(e){}
+    try {
+      delete window.top[cbName];
+      delete window[cbName];
+      delete targetWin[cbName];
+    } catch(e){}
   };
 
-  var sc = document.createElement("script");
+  /* แทรกแท็ก Script ลงใน document ของหน้าหลัก (top document) เหมือนคำสั่งทดสอบใน F12 */
+  var topDoc = window.top.document || document;
+  var sc = topDoc.createElement("script");
   sc.id = "tmp_jsonp_script";
   sc.src = webAppUrl + "?prefix=" + cbName + "&t=" + Date.now();
   sc.onerror = function () {
@@ -413,5 +419,5 @@
     targetWin.__tmp_loading = false;
     div.remove();
   };
-  document.body.appendChild(sc);
+  topDoc.body.appendChild(sc);
 })();
