@@ -12,7 +12,7 @@
   var oldScript = document.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
-  /* 1. Barbaacha Gosa Fuulaa (Page detection) */
+  /* 1. ตรวจสอบประเภทหน้า */
   var tableName = (f && typeof f.getTableName === "function") ? f.getTableName() : "";
   var curPageUrl = (targetWin.location.href || "") + (window.location.href || "");
   var numVal = "";
@@ -35,7 +35,7 @@
     numVal.indexOf("RITM") !== -1 ||
     targetDoc.querySelector('textarea[id="sc_req_item.u_cancel_reason"]') !== null;
 
-  /* RITM Cancel Reason dabarsuu */
+  /* ตรวจสอบเคสส่งค่าข้ามหน้าไปยัง RITM สำหรับ Cancel */
   var crBox = targetDoc.querySelector(
     'textarea[id="sc_req_item.u_cancel_reason"],textarea[name="sc_req_item.u_cancel_reason"]'
   );
@@ -60,7 +60,7 @@
     return;
   }
 
-  /* Ramaddii hayyamame (Allowed Categories) */
+  /* กรองหมวดหมู่ตามประเภทหน้า */
   var allowedCats = isIncidentPage
     ? ["Server slow", "Ticket Cancal", "Incident Request"]
     : ["Ticket Cancal", "Service Request"];
@@ -165,6 +165,7 @@
     return lines.join("\n");
   }
 
+  /* URL Web App จาก Google Docs ที่ได้ทดสอบผ่านแล้ว */
   var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
@@ -277,7 +278,7 @@
       var fullCheck = (curCat + " " + selText + " " + tName).toLowerCase();
       var isCancelTicket = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
 
-      /* Fuula Incident qindeessuu */
+      /* จัดการหน้า Incident */
       if (isIncidentPage) {
         val = repDesc(val, getDesc());
         var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea, textarea[id*='comments']");
@@ -346,7 +347,7 @@
         return;
       }
 
-      /* Fuula SCTASK / RITM qindeessuu */
+      /* จัดการหน้า SCTASK / RITM */
       var isSR = curCat.toLowerCase().indexOf("service request") !== -1;
       var isCan = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
 
@@ -407,20 +408,21 @@
 
   targetWin.__tmp_loading = true;
 
-  /* Callback iddoowwan hunda keessatti akka argamu taasisuu */
-  var cbName = "sn_callback_" + Math.floor(Math.random() * 1000000);
+  /* สร้างชื่อฟังก์ชัน callback และผูกให้ครอบคลุมทุก scope ของหน้าต่าง */
+  var cbName = "sn_cb_" + Math.floor(Math.random() * 1000000);
   window[cbName] = targetWin[cbName] = window.top[cbName] = function (d) {
     populateUI(d);
-    try { delete window[cbName]; } catch(e) {}
-    try { delete targetWin[cbName]; } catch(e) {}
-    try { delete window.top[cbName]; } catch(e) {}
+    try { delete window[cbName]; } catch (e) {}
+    try { delete targetWin[cbName]; } catch (e) {}
+    try { delete window.top[cbName]; } catch (e) {}
   };
 
+  /* สร้าง Script Tag เรียก Web App พร้อมระบุชื่อ callback ที่สุ่มขึ้นมา */
   var sc = document.createElement("script");
   sc.id = "tmp_jsonp_script";
   sc.src = webAppUrl + (webAppUrl.indexOf("?") !== -1 ? "&" : "?") + "prefix=" + cbName + "&t=" + Date.now();
-  sc.onerror = function() {
-    alert("Google Web App irraa odeeffannoo fiduun hin danda'amne!");
+  sc.onerror = function () {
+    alert("ไม่สามารถดึงข้อมูลจาก Google Web App ได้ กรุณาตรวจสอบการเชื่อมต่อ");
     targetWin.__tmp_loading = false;
     div.remove();
   };
