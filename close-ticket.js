@@ -160,7 +160,7 @@
     return lines.join("\n");
   }
 
-  /* URL จากหน้า Console ที่ทดสอบผ่าน 67 รายการแล้ว */
+  /* URL Web App จาก Google Docs ที่พิสูจน์แล้วว่าส่งข้อมูล 67 รายการ */
   var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlSH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
@@ -199,6 +199,7 @@
     catSelect.innerHTML = "";
     var catMap = {};
 
+    /* รวมทุกหมวดหมู่ ไม่มีการตัดกรองทิ้ง */
     list.forEach(function (item, idx) {
       var c = (item.category && item.category.trim()) ? item.category.trim() : "General";
       if (!catMap[c]) catMap[c] = [];
@@ -208,7 +209,7 @@
 
     var keys = Object.keys(catMap);
     if (!keys.length) {
-      alert("No template data for this page");
+      alert("No template data");
       div.remove();
       return;
     }
