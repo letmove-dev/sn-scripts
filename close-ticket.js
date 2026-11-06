@@ -9,7 +9,7 @@
 
   var oldBox = targetDoc.getElementById("tmp_modal_box");
   if (oldBox) oldBox.remove();
-  var oldScript = document.getElementById("tmp_jsonp_script");
+  var oldScript = targetDoc.getElementById("tmp_jsonp_script") || document.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
   /* 1. ตรวจสอบประเภทหน้า */
@@ -165,8 +165,8 @@
     return lines.join("\n");
   }
 
-  /* URL Web App จาก Google Docs ที่ได้ทดสอบผ่านแล้ว */
-  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlsH5Qjf5ZQ/exec";
+  /* URL ตัวจริงที่ถูกต้อง (ใช้เลข 1) */
+  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
   div.id = "tmp_modal_box";
@@ -408,17 +408,14 @@
 
   targetWin.__tmp_loading = true;
 
-  /* สร้างชื่อฟังก์ชัน callback และผูกให้ครอบคลุมทุก scope ของหน้าต่าง */
-  var cbName = "sn_cb_" + Math.floor(Math.random() * 1000000);
+  /* สร้างชื่อ callback และเชื่อมต่อทุก scope */
+  var cbName = "sn_load_templates";
   window[cbName] = targetWin[cbName] = window.top[cbName] = function (d) {
     populateUI(d);
-    try { delete window[cbName]; } catch (e) {}
-    try { delete targetWin[cbName]; } catch (e) {}
-    try { delete window.top[cbName]; } catch (e) {}
   };
 
-  /* สร้าง Script Tag เรียก Web App พร้อมระบุชื่อ callback ที่สุ่มขึ้นมา */
-  var sc = document.createElement("script");
+  /* สร้าง Script Tag และแทรกลงใน targetDoc.body (iframe เดียวกับตัว modal) */
+  var sc = targetDoc.createElement("script");
   sc.id = "tmp_jsonp_script";
   sc.src = webAppUrl + (webAppUrl.indexOf("?") !== -1 ? "&" : "?") + "prefix=" + cbName + "&t=" + Date.now();
   sc.onerror = function () {
@@ -426,5 +423,5 @@
     targetWin.__tmp_loading = false;
     div.remove();
   };
-  document.body.appendChild(sc);
+  targetDoc.body.appendChild(sc);
 })();
