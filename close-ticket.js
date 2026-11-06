@@ -283,4 +283,135 @@
             stateEl.value = "8";
             stateEl.dispatchEvent(new Event("change", { bubbles: true }));
           }
-          setVal
+          setValToElem(commentBox, val);
+          div.remove();
+          return;
+        } else {
+          var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
+          if (f) {
+            try { f.setValue("comments", ""); } catch (e) {}
+            try { f.setValue("state", "6"); } catch (e) {}
+          }
+          setValToElem(closeBox, val);
+          if (commentBox) setValToElem(commentBox, "");
+
+          var incStateEl = targetDoc.querySelector('select[id="incident.state"], select[name="incident.state"], select[id*=".state"]');
+          if (incStateEl) {
+            incStateEl.value = "6";
+            incStateEl.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+
+          var ciSysId = "";
+          var ciDisplay = "";
+          if (f) {
+            try { ciSysId = f.getValue("cmdb_ci") || ""; } catch (e) {}
+            try { ciDisplay = f.getDisplayValue("cmdb_ci") || ""; } catch (e) {}
+          }
+          if (!ciDisplay) {
+            var dispEl = targetDoc.querySelector('input[id="sys_display.incident.cmdb_ci"]');
+            if (dispEl) ciDisplay = dispEl.value;
+          }
+          if (!ciSysId) {
+            var rawEl = targetDoc.querySelector('input[id="incident.cmdb_ci"]');
+            if (rawEl) ciSysId = rawEl.value;
+          }
+
+          if (f) {
+            try { f.setValue("close_code", "Solved (Permanently)"); } catch (e) {}
+            try { f.setValue("u_action", "Update Data for workaround"); } catch (e) {}
+            if (ciDisplay) {
+              try { f.setValue("u_environment", ciDisplay); } catch (e) {}
+              try { f.setValue("u_spectrum_pro_ci", ciSysId || ciDisplay, ciDisplay); } catch (e) {}
+            }
+          }
+
+          fillBySelectors(['select[id="incident.close_code"]'], "Solved (Permanently)");
+          fillBySelectors(['input[id="sys_display.incident.u_action"]'], "Update Data for workaround");
+          if (ciDisplay) {
+            fillBySelectors(['input[id="incident.u_environment"]'], ciDisplay);
+            fillBySelectors(['input[id="sys_display.incident.u_spectrum_pro_ci"]'], ciDisplay);
+            if (ciSysId) fillBySelectors(['input[id="incident.u_spectrum_pro_ci"]'], ciSysId);
+          }
+        }
+        div.remove();
+        return;
+      }
+
+      /* จัดการหน้า SCTASK / RITM */
+      var isSR = curCat.toLowerCase().indexOf("service request") !== -1;
+      var isCan = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
+
+      if (isSR) {
+        val = repBU(repDesc(val, getBJ()), getBUFromCI());
+        if (f) {
+          try {
+            f.setValue("state", "3");
+            f.setValue("work_notes", val);
+            f.setValue("sc_task.request_item.work_notes", val);
+          } catch (e) {}
+        }
+        var stEl = targetDoc.querySelector('select[id="sc_task.state"],select[name="sc_task.state"]');
+        if (stEl) {
+          stEl.value = "3";
+          setValToElem(stEl, "3");
+        }
+        fillBySelectors(
+          [
+            'textarea[id="sc_task.request_item.work_notes"]',
+            'textarea[id*="work_notes"]',
+            "#activity-stream-work_notes-textarea",
+          ],
+          val
+        );
+      } else if (isCan) {
+        if (crBox) {
+          if (f) try { f.setValue("u_cancel_reason", val); } catch (e) {}
+          fillBySelectors(['textarea[id="sc_req_item.u_cancel_reason"]'], val);
+        } else {
+          try {
+            window.top.__pending_cancel = val;
+            localStorage.setItem("__pending_cancel", val);
+          } catch (e) {}
+          var ritmId = "";
+          if (f) try { ritmId = f.getValue("request_item"); } catch (e) {}
+          if (!ritmId) {
+            var rInp = targetDoc.querySelector('input[id="sc_task.request_item"]');
+            if (rInp) ritmId = rInp.value;
+          }
+          div.remove();
+          if (ritmId) {
+            targetWin.location.href = "sc_req_item.do?sys_id=" + ritmId;
+          } else {
+            var infoBtn = targetDoc.getElementById("viewr.sc_task.request_item");
+            if (infoBtn) infoBtn.click();
+            setTimeout(function () {
+              var opLink = targetDoc.querySelector('a[data-type="reference_clickthrough"]');
+              if (opLink && opLink.href) targetWin.location.href = opLink.href;
+            }, 400);
+          }
+          return;
+        }
+      }
+      div.remove();
+    };
+  }
+
+  targetWin.__tmp_loading = true;
+
+  /* ใช้ชื่อ Callback ตรงกับที่ทดสอบผ่านใน Console และผูกไว้กับทุกระดับ window */
+  var testCb = "inspect_data_" + Date.now();
+  window[testCb] = window.top[testCb] = targetWin[testCb] = function (res) {
+    populateUI(res);
+  };
+
+  /* สร้าง Script Tag และแทรกลงใน document.body ของหน้าต่างปัจจุบันตรงๆ ตามที่ F12 รันผ่าน */
+  var s = document.createElement("script");
+  s.id = "tmp_jsonp_script";
+  s.src = webAppUrl + "?prefix=" + testCb + "&t=" + Date.now();
+  s.onerror = function () {
+    alert("ไม่สามารถดึงข้อมูลจาก Google Web App ได้ กรุณาตรวจสอบการเชื่อมต่อ");
+    targetWin.__tmp_loading = false;
+    div.remove();
+  };
+  document.body.appendChild(s);
+})();
