@@ -406,22 +406,26 @@
     };
   }
 
-  targetWin.__tmp_loading = true;
+targetWin.__tmp_loading = true;
 
-  /* สร้างชื่อ callback และเชื่อมต่อทุก scope */
-  var cbName = "sn_load_templates";
-  window[cbName] = targetWin[cbName] = window.top[cbName] = function (d) {
-    populateUI(d);
-  };
+  // URL ที่ส่งค่าตรงกับหน้า Manage deployments
+  var reqUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec?t=" + Date.now();
 
-  /* สร้าง Script Tag และแทรกลงใน targetDoc.body (iframe เดียวกับตัว modal) */
-  var sc = targetDoc.createElement("script");
-  sc.id = "tmp_jsonp_script";
-  sc.src = webAppUrl + (webAppUrl.indexOf("?") !== -1 ? "&" : "?") + "prefix=" + cbName + "&t=" + Date.now();
-  sc.onerror = function () {
-    alert("ไม่สามารถดึงข้อมูลจาก Google Web App ได้ กรุณาตรวจสอบการเชื่อมต่อ");
-    targetWin.__tmp_loading = false;
-    div.remove();
-  };
-  targetDoc.body.appendChild(sc);
+  fetch(reqUrl, {
+    method: "GET",
+    credentials: "include" // สำคัญมาก: เพื่อใช้ Session ล็อกอินของ Celestica ดึงข้อมูลข้ามโดเมน
+  })
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      populateUI(data);
+    })
+    .catch(function (err) {
+      console.error("Fetch Error:", err);
+      alert("ไม่สามารถดึงข้อมูลได้: กรุณาเปิดแท็บใหม่แล้วล็อกอิน Google ของ Celestica ให้เรียบร้อย");
+      targetWin.__tmp_loading = false;
+      div.remove();
+    });
 })();
