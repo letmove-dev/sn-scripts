@@ -160,7 +160,7 @@
     return lines.join("\n");
   }
 
-  /* URL ตัวจริงเป๊ะๆ ตามที่รันผ่านใน Console ล่าสุด */
+  /* URL จากหน้า Console ที่ทดสอบผ่าน 67 รายการแล้ว */
   var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlSH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
@@ -199,7 +199,6 @@
     catSelect.innerHTML = "";
     var catMap = {};
 
-    /* รวมทุกรายการโดยไม่ตัดหมวดหมู่ทิ้ง เพื่อให้แสดงผลครบ 67 รายการแน่นอน */
     list.forEach(function (item, idx) {
       var c = (item.category && item.category.trim()) ? item.category.trim() : "General";
       if (!catMap[c]) catMap[c] = [];
@@ -399,14 +398,12 @@
 
   targetWin.__tmp_loading = true;
 
-  /* Callback กลางที่ตรงกับ script tag ด้านล่าง */
   var cbName = "sn_load_all_" + Date.now();
   window[cbName] = targetWin[cbName] = window.top[cbName] = function (d) {
     populateUI(d);
     try { delete window[cbName]; delete targetWin[cbName]; delete window.top[cbName]; } catch(e){}
   };
 
-  /* เรียกผ่าน script tag โดยตรง */
   var sc = document.createElement("script");
   sc.id = "tmp_jsonp_script";
   sc.src = webAppUrl + "?prefix=" + cbName + "&t=" + Date.now();
