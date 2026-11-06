@@ -165,8 +165,7 @@
     return lines.join("\n");
   }
 
-  var webAppUrl =
-    "https://script.google.com/a/macros/celestica.com/s/AKfycbzHghC3LKq_xMY0WN8Wwm20wXh247_8NETKbZegFjpv3uZRmdEUc5RSfhAne8Os27uX/exec";
+var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
   div.id = "tmp_modal_box";
