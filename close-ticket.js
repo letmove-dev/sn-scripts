@@ -408,24 +408,40 @@
 
 targetWin.__tmp_loading = true;
 
-  // URL ที่ส่งค่าตรงกับหน้า Manage deployments
-  var reqUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec?t=" + Date.now();
+  // ลบแท็ก script ตัวเก่าที่อาจค้างอยู่
+  var prevScript = document.getElementById("tmp_jsonp_script") || targetDoc.getElementById("tmp_jsonp_script");
+  if (prevScript) prevScript.remove();
 
-  fetch(reqUrl, {
-    method: "GET",
-    credentials: "include" // สำคัญมาก: เพื่อใช้ Session ล็อกอินของ Celestica ดึงข้อมูลข้ามโดเมน
-  })
-    .then(function (res) {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
-    })
-    .then(function (data) {
-      populateUI(data);
-    })
-    .catch(function (err) {
-      console.error("Fetch Error:", err);
-      alert("ไม่สามารถดึงข้อมูลได้: กรุณาเปิดแท็บใหม่แล้วล็อกอิน Google ของ Celestica ให้เรียบร้อย");
-      targetWin.__tmp_loading = false;
-      div.remove();
-    });
+  // กำหนดชื่อ Callback แบบ Global ไว้ทุกจุด
+  var globalCbName = "sn_global_cb_" + Date.now();
+
+  var cleanup = function () {
+    targetWin.__tmp_loading = false;
+    try { delete window[globalCbName]; } catch (e) {}
+    try { delete targetWin[globalCbName]; } catch (e) {}
+    try { delete window.top[globalCbName]; } catch (e) {}
+  };
+
+  // ผูกตัวรับข้อมูลไว้ทั้ง 3 ระดับเพื่อกัน Scope หลุด
+  window[globalCbName] = targetWin[globalCbName] = window.top[globalCbName] = function (data) {
+    cleanup();
+    populateUI(data);
+  };
+
+  // URL จากภาพ Manage deployments
+  var reqUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec";
+  var scriptUrl = reqUrl + "?prefix=" + globalCbName + "&t=" + Date.now();
+
+  var sc = document.createElement("script");
+  sc.id = "tmp_jsonp_script";
+  sc.src = scriptUrl;
+
+  sc.onerror = function () {
+    cleanup();
+    alert("ไม่สามารถดึงข้อมูลได้: กรุณาเปิดหน้า Web App ในอีกแท็บเพื่อยืนยัน Session ล็อกอิน");
+    div.remove();
+  };
+
+  document.head.appendChild(sc);
+})();
 })();
