@@ -166,7 +166,8 @@
   }
 
   /* URL Web App จาก Google Sheets ตัวเดิมที่เคยทำงานได้ปกติ */
-  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzHghC3LKq_xMY0WN8Wwm20wXh247_8NETKbZegFjpv3uZRmdEUc5RSfhAne8Os27uX/exec";
+  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlsH5Qjf5ZQ/exec";
+ 
 
   var div = targetDoc.createElement("div");
   div.id = "tmp_modal_box";
