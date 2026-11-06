@@ -9,7 +9,7 @@
 
   var oldBox = targetDoc.getElementById("tmp_modal_box");
   if (oldBox) oldBox.remove();
-  var oldScript = document.getElementById("tmp_jsonp_script") || targetDoc.getElementById("tmp_jsonp_script");
+  var oldScript = targetDoc.getElementById("tmp_jsonp_script") || document.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
   /* 1. ตรวจสอบประเภทหน้า */
@@ -165,7 +165,7 @@
     return lines.join("\n");
   }
 
-  /* URL ที่ถูกต้องตรงตาม Console ทุกตัวอักษร */
+  /* URL Web App จาก Google Docs */
   var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlsH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
@@ -408,13 +408,15 @@
 
   targetWin.__tmp_loading = true;
 
-  // ใช้ชื่อ callback เหมือนที่รันผ่านใน Console
-  var cbName = "checkDocs";
+  /* ลงทะเบียน Callback พร้อมกันทั้ง Parent และ Iframe */
+  var cbName = "sn_doc_cb_" + Date.now();
   window[cbName] = targetWin[cbName] = window.top[cbName] = function (d) {
     populateUI(d);
+    try { delete window[cbName]; delete targetWin[cbName]; delete window.top[cbName]; } catch (e) {}
   };
 
-  var sc = document.createElement("script");
+  /* สร้าง Script Tag และแทรกลงใน targetDoc.body (iframe เดียวกับตัว Modal เสมอ) */
+  var sc = targetDoc.createElement("script");
   sc.id = "tmp_jsonp_script";
   sc.src = webAppUrl + (webAppUrl.indexOf("?") !== -1 ? "&" : "?") + "prefix=" + cbName + "&t=" + Date.now();
   sc.onerror = function () {
@@ -422,5 +424,5 @@
     targetWin.__tmp_loading = false;
     div.remove();
   };
-  document.body.appendChild(sc);
+  targetDoc.body.appendChild(sc);
 })();
