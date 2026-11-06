@@ -9,7 +9,7 @@
 
   var oldBox = targetDoc.getElementById("tmp_modal_box");
   if (oldBox) oldBox.remove();
-  var oldScript = document.getElementById("tmp_jsonp_script");
+  var oldScript = document.getElementById("tmp_jsonp_script") || targetDoc.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
   /* 1. ตรวจสอบประเภทหน้า */
@@ -398,20 +398,15 @@
 
   targetWin.__tmp_loading = true;
 
-  /* ใช้ชื่อ Callback ตรงกับที่ทดสอบผ่านใน Console และผูกไว้กับทุกระดับ window */
+  /* ใช้ Callback แบบเดียวกับท่อนทดสอบใน Console ที่รันผ่าน */
   var testCb = "inspect_data_" + Date.now();
-  window[testCb] = window.top[testCb] = targetWin[testCb] = function (res) {
+  window[testCb] = function (res) {
     populateUI(res);
   };
 
-  /* สร้าง Script Tag และแทรกลงใน document.body ของหน้าต่างปัจจุบันตรงๆ ตามที่ F12 รันผ่าน */
+  /* สร้าง Script Tag และแทรกลงใน document.body ของหน้าต่างปัจจุบัน (ตรงตามคำสั่งทดสอบเป๊ะๆ) */
   var s = document.createElement("script");
   s.id = "tmp_jsonp_script";
   s.src = webAppUrl + "?prefix=" + testCb + "&t=" + Date.now();
-  s.onerror = function () {
-    alert("ไม่สามารถดึงข้อมูลจาก Google Web App ได้ กรุณาตรวจสอบการเชื่อมต่อ");
-    targetWin.__tmp_loading = false;
-    div.remove();
-  };
   document.body.appendChild(s);
 })();
