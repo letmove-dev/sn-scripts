@@ -9,7 +9,7 @@
 
   var oldBox = targetDoc.getElementById("tmp_modal_box");
   if (oldBox) oldBox.remove();
-  var oldScript = targetDoc.getElementById("tmp_jsonp_script") || document.getElementById("tmp_jsonp_script");
+  var oldScript = document.getElementById("tmp_jsonp_script") || targetDoc.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
   /* 1. ตรวจสอบประเภทหน้า */
@@ -59,11 +59,6 @@
     });
     return;
   }
-
-  /* กรองหมวดหมู่ตามประเภทหน้า */
-  var allowedCats = isIncidentPage
-    ? ["Server slow", "Ticket Cancal", "Incident Request"]
-    : ["Ticket Cancal", "Service Request"];
 
   function setValToElem(el, val) {
     if (!el) return;
@@ -165,6 +160,9 @@
     return lines.join("\n");
   }
 
+  /* URL ตัวจริงเป๊ะๆ ตามที่รันผ่านใน Console ล่าสุด */
+  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlSH5Qjf5ZQ/exec";
+
   var div = targetDoc.createElement("div");
   div.id = "tmp_modal_box";
   div.style =
@@ -201,16 +199,12 @@
     catSelect.innerHTML = "";
     var catMap = {};
 
+    /* รวมทุกรายการโดยไม่ตัดหมวดหมู่ทิ้ง เพื่อให้แสดงผลครบ 67 รายการแน่นอน */
     list.forEach(function (item, idx) {
-      var c = item.category || "General";
-      var ok = allowedCats.some(function (a) {
-        return a.toLowerCase().trim() === c.toLowerCase().trim();
-      });
-      if (ok) {
-        if (!catMap[c]) catMap[c] = [];
-        item.rowId = "row_" + idx;
-        catMap[c].push(item);
-      }
+      var c = (item.category && item.category.trim()) ? item.category.trim() : "General";
+      if (!catMap[c]) catMap[c] = [];
+      item.rowId = "row_" + idx;
+      catMap[c].push(item);
     });
 
     var keys = Object.keys(catMap);
@@ -223,7 +217,7 @@
     keys.forEach(function (cat) {
       var opt = targetDoc.createElement("option");
       opt.value = cat;
-      opt.innerText = "📁 " + cat;
+      opt.innerText = "📁 " + cat + " (" + catMap[cat].length + ")";
       catSelect.appendChild(opt);
     });
 
@@ -247,7 +241,7 @@
       var raw = matched ? matched.content : "";
       if (isIncidentPage) {
         raw = repDesc(raw, getDesc());
-      } else if (catSelect.value.toLowerCase().indexOf("service request") !== -1) {
+      } else {
         raw = repBU(repDesc(raw, getBJ()), getBUFromCI());
       }
       preview.value = raw;
@@ -403,57 +397,23 @@
     };
   }
 
-  /* ดึงข้อมูลแบบ Dual Mode: พยายามเรียก Sheet เดิมก่อน ถ้าไม่ได้ให้ใช้ข้อมูลในตัวทันที */
-  var fallbackData = [
-    {
-      category: "Service Request",
-      name: "EDIT MAC",
-      content: "Template for EDIT MAC\nIssue Description:\nScan MAC\nBU:\nEnvironment"
-    },
-    {
-      category: "Ticket Cancal",
-      name: "Cancel Request",
-      content: "Cancel this ticket due to user request or duplicate request."
-    },
-    {
-      category: "Server slow",
-      name: "Server Performance Issue",
-      content: "Issue Description:\nInvestigated server high CPU/Memory usage.\nEnvironment"
-    },
-    {
-      category: "Incident Request",
-      name: "General Incident Solved",
-      content: "Issue Description:\nResolved the issue as per standard operating procedure.\nEnvironment"
-    }
-  ];
+  targetWin.__tmp_loading = true;
 
-  // พยายามเรียก Apps Script เดิม แต่มี Timeout 2 วินาที ถ้าไม่ตอบรับให้เปิดข้อมูลทันที
-  var isDone = false;
-  var safeTimer = setTimeout(function () {
-    if (!isDone) {
-      isDone = true;
-      populateUI(fallbackData);
-    }
-  }, 1500);
-
-  window.callback = targetWin.callback = function (d) {
-    if (!isDone) {
-      isDone = true;
-      clearTimeout(safeTimer);
-      populateUI(d);
-    }
+  /* Callback กลางที่ตรงกับ script tag ด้านล่าง */
+  var cbName = "sn_load_all_" + Date.now();
+  window[cbName] = targetWin[cbName] = window.top[cbName] = function (d) {
+    populateUI(d);
+    try { delete window[cbName]; delete targetWin[cbName]; delete window.top[cbName]; } catch(e){}
   };
 
-  var oldSheetsUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlsH5Qjf5ZQ/exec";
-  var sc = targetDoc.createElement("script");
+  /* เรียกผ่าน script tag โดยตรง */
+  var sc = document.createElement("script");
   sc.id = "tmp_jsonp_script";
-  sc.src = oldSheetsUrl + "?prefix=callback&t=" + Date.now();
+  sc.src = webAppUrl + "?prefix=" + cbName + "&t=" + Date.now();
   sc.onerror = function () {
-    if (!isDone) {
-      isDone = true;
-      clearTimeout(safeTimer);
-      populateUI(fallbackData);
-    }
+    alert("ไม่สามารถดึงข้อมูลจาก Google Web App ได้ กรุณาตรวจสอบการเชื่อมต่อ");
+    targetWin.__tmp_loading = false;
+    div.remove();
   };
-  targetDoc.body.appendChild(sc);
+  document.body.appendChild(sc);
 })();
