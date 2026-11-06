@@ -9,7 +9,7 @@
 
   var oldBox = targetDoc.getElementById("tmp_modal_box");
   if (oldBox) oldBox.remove();
-  var oldScript = targetDoc.getElementById("tmp_jsonp_script") || document.getElementById("tmp_jsonp_script");
+  var oldScript = document.getElementById("tmp_jsonp_script");
   if (oldScript) oldScript.remove();
 
   /* 1. ตรวจสอบประเภทหน้า */
@@ -35,7 +35,7 @@
     numVal.indexOf("RITM") !== -1 ||
     targetDoc.querySelector('textarea[id="sc_req_item.u_cancel_reason"]') !== null;
 
-  /* ตรวจสอบเคสส่งค่าข้ามหน้าไปยัง RITM สำหรับ Cancel */
+  /* ตรวจสอบเคสส่งค่าข้ามหน้าไปยัง RITM */
   var crBox = targetDoc.querySelector(
     'textarea[id="sc_req_item.u_cancel_reason"],textarea[name="sc_req_item.u_cancel_reason"]'
   );
@@ -165,8 +165,8 @@
     return lines.join("\n");
   }
 
-  /* URL ตัวจริงที่ถูกต้อง (ใช้เลข 1) */
-  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzP12Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec";
+  /* URL Web App จาก Google Sheets ตัวเดิมที่เคยทำงานได้ปกติ */
+  var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzHghC3LKq_xMY0WN8Wwm20wXh247_8NETKbZegFjpv3uZRmdEUc5RSfhAne8Os27uX/exec";
 
   var div = targetDoc.createElement("div");
   div.id = "tmp_modal_box";
@@ -257,191 +257,4 @@
     }
 
     catSelect.onchange = updateSubItems;
-    itemSelect.onchange = updatePreview;
-    updateSubItems();
-
-    targetDoc.getElementById("tmpOk").onclick = function () {
-      var items = catMap[catSelect.value] || [];
-      var matched = items.find(function (it) {
-        return it.rowId === itemSelect.value;
-      });
-      if (!matched || !matched.content) {
-        alert("No content");
-        return;
-      }
-
-      var val = matched.content;
-      var curCat = catSelect.value || "";
-      var selText = catSelect.options[catSelect.selectedIndex] ? catSelect.options[catSelect.selectedIndex].text : "";
-      var tName = matched.name || "";
-
-      var fullCheck = (curCat + " " + selText + " " + tName).toLowerCase();
-      var isCancelTicket = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
-
-      /* จัดการหน้า Incident */
-      if (isIncidentPage) {
-        val = repDesc(val, getDesc());
-        var commentBox = targetDoc.querySelector("#activity-stream-comments-textarea, textarea[id*='comments']");
-
-        if (isCancelTicket) {
-          if (f) {
-            try { f.setValue("state", "8"); } catch (e) {}
-            try { f.setValue("comments", val); } catch (e) {}
-          }
-          var stateEl = targetDoc.querySelector('select[id="incident.state"], select[name="incident.state"], select[id*=".state"]');
-          if (stateEl) {
-            stateEl.value = "8";
-            stateEl.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-          setValToElem(commentBox, val);
-          div.remove();
-          return;
-        } else {
-          var closeBox = targetDoc.querySelector('textarea[id="incident.close_notes"]');
-          if (f) {
-            try { f.setValue("comments", ""); } catch (e) {}
-            try { f.setValue("state", "6"); } catch (e) {}
-          }
-          setValToElem(closeBox, val);
-          if (commentBox) setValToElem(commentBox, "");
-
-          var incStateEl = targetDoc.querySelector('select[id="incident.state"], select[name="incident.state"], select[id*=".state"]');
-          if (incStateEl) {
-            incStateEl.value = "6";
-            incStateEl.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-
-          var ciSysId = "";
-          var ciDisplay = "";
-          if (f) {
-            try { ciSysId = f.getValue("cmdb_ci") || ""; } catch (e) {}
-            try { ciDisplay = f.getDisplayValue("cmdb_ci") || ""; } catch (e) {}
-          }
-          if (!ciDisplay) {
-            var dispEl = targetDoc.querySelector('input[id="sys_display.incident.cmdb_ci"]');
-            if (dispEl) ciDisplay = dispEl.value;
-          }
-          if (!ciSysId) {
-            var rawEl = targetDoc.querySelector('input[id="incident.cmdb_ci"]');
-            if (rawEl) ciSysId = rawEl.value;
-          }
-
-          if (f) {
-            try { f.setValue("close_code", "Solved (Permanently)"); } catch (e) {}
-            try { f.setValue("u_action", "Update Data for workaround"); } catch (e) {}
-            if (ciDisplay) {
-              try { f.setValue("u_environment", ciDisplay); } catch (e) {}
-              try { f.setValue("u_spectrum_pro_ci", ciSysId || ciDisplay, ciDisplay); } catch (e) {}
-            }
-          }
-
-          fillBySelectors(['select[id="incident.close_code"]'], "Solved (Permanently)");
-          fillBySelectors(['input[id="sys_display.incident.u_action"]'], "Update Data for workaround");
-          if (ciDisplay) {
-            fillBySelectors(['input[id="incident.u_environment"]'], ciDisplay);
-            fillBySelectors(['input[id="sys_display.incident.u_spectrum_pro_ci"]'], ciDisplay);
-            if (ciSysId) fillBySelectors(['input[id="incident.u_spectrum_pro_ci"]'], ciSysId);
-          }
-        }
-        div.remove();
-        return;
-      }
-
-      /* จัดการหน้า SCTASK / RITM */
-      var isSR = curCat.toLowerCase().indexOf("service request") !== -1;
-      var isCan = fullCheck.indexOf("cancel") !== -1 || fullCheck.indexOf("cancal") !== -1;
-
-      if (isSR) {
-        val = repBU(repDesc(val, getBJ()), getBUFromCI());
-        if (f) {
-          try {
-            f.setValue("state", "3");
-            f.setValue("work_notes", val);
-            f.setValue("sc_task.request_item.work_notes", val);
-          } catch (e) {}
-        }
-        var stEl = targetDoc.querySelector('select[id="sc_task.state"],select[name="sc_task.state"]');
-        if (stEl) {
-          stEl.value = "3";
-          setValToElem(stEl, "3");
-        }
-        fillBySelectors(
-          [
-            'textarea[id="sc_task.request_item.work_notes"]',
-            'textarea[id*="work_notes"]',
-            "#activity-stream-work_notes-textarea",
-          ],
-          val
-        );
-      } else if (isCan) {
-        if (crBox) {
-          if (f) try { f.setValue("u_cancel_reason", val); } catch (e) {}
-          fillBySelectors(['textarea[id="sc_req_item.u_cancel_reason"]'], val);
-        } else {
-          try {
-            window.top.__pending_cancel = val;
-            localStorage.setItem("__pending_cancel", val);
-          } catch (e) {}
-          var ritmId = "";
-          if (f) try { ritmId = f.getValue("request_item"); } catch (e) {}
-          if (!ritmId) {
-            var rInp = targetDoc.querySelector('input[id="sc_task.request_item"]');
-            if (rInp) ritmId = rInp.value;
-          }
-          div.remove();
-          if (ritmId) {
-            targetWin.location.href = "sc_req_item.do?sys_id=" + ritmId;
-          } else {
-            var infoBtn = targetDoc.getElementById("viewr.sc_task.request_item");
-            if (infoBtn) infoBtn.click();
-            setTimeout(function () {
-              var opLink = targetDoc.querySelector('a[data-type="reference_clickthrough"]');
-              if (opLink && opLink.href) targetWin.location.href = opLink.href;
-            }, 400);
-          }
-          return;
-        }
-      }
-      div.remove();
-    };
-  }
-
-targetWin.__tmp_loading = true;
-
-  // ลบแท็ก script ตัวเก่าที่อาจค้างอยู่
-  var prevScript = document.getElementById("tmp_jsonp_script") || targetDoc.getElementById("tmp_jsonp_script");
-  if (prevScript) prevScript.remove();
-
-  // กำหนดชื่อ Callback แบบ Global ไว้ทุกจุด
-  var globalCbName = "sn_global_cb_" + Date.now();
-
-  var cleanup = function () {
-    targetWin.__tmp_loading = false;
-    try { delete window[globalCbName]; } catch (e) {}
-    try { delete targetWin[globalCbName]; } catch (e) {}
-    try { delete window.top[globalCbName]; } catch (e) {}
-  };
-
-  // ผูกตัวรับข้อมูลไว้ทั้ง 3 ระดับเพื่อกัน Scope หลุด
-  window[globalCbName] = targetWin[globalCbName] = window.top[globalCbName] = function (data) {
-    cleanup();
-    populateUI(data);
-  };
-
-  // URL จากภาพ Manage deployments
-  var reqUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmtF4hxu12mlSH5Qjf5ZQ/exec";
-  var scriptUrl = reqUrl + "?prefix=" + globalCbName + "&t=" + Date.now();
-
-  var sc = document.createElement("script");
-  sc.id = "tmp_jsonp_script";
-  sc.src = scriptUrl;
-
-  sc.onerror = function () {
-    cleanup();
-    alert("ไม่สามารถดึงข้อมูลได้: กรุณาเปิดหน้า Web App ในอีกแท็บเพื่อยืนยัน Session ล็อกอิน");
-    div.remove();
-  };
-
-  document.head.appendChild(sc);
-})();
-})();
+    itemSelect.onchange = update
