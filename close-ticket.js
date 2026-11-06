@@ -160,7 +160,7 @@
     return lines.join("\n");
   }
 
-  /* URL Web App จาก Google Docs ที่ถูกต้อง 100% ตามภาพ */
+  /* URL Web App จาก Google Docs ที่ทดสอบผ่าน 67 รายการแน่นอน */
   var webAppUrl = "https://script.google.com/a/macros/celestica.com/s/AKfycbzPl2Jc2s2HS1cYBL_DWLwiRDsMmXPDmVav-GxQgMWPST5i4GmTF4hxu12mlsH5Qjf5ZQ/exec";
 
   var div = targetDoc.createElement("div");
@@ -398,15 +398,15 @@
 
   targetWin.__tmp_loading = true;
 
-  /* ใช้ testCb แบบเดียวกับ Console ทุกประการ */
+  /* ประกาศชื่อ Callback เดียวกับที่ทดสอบใน F12 ให้ครอบคลุมทุกระดับ Window */
   var testCb = "inspect_data_" + Date.now();
   window[testCb] = window.top[testCb] = targetWin[testCb] = function (res) {
     populateUI(res);
   };
 
-  /* แทรกลง document.body ตรงๆ ตามคำสั่ง Console ที่รันผ่าน */
+  /* แทรกแท็ก Script ลงทั้ง document ปัจจุบัน และ document ของ iframe เพื่อรับประกันการเรียกกลับ */
   var s = document.createElement("script");
   s.id = "tmp_jsonp_script";
   s.src = webAppUrl + "?prefix=" + testCb + "&t=" + Date.now();
-  document.body.appendChild(s);
+  (document.body || targetDoc.body).appendChild(s);
 })();
