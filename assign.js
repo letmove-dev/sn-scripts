@@ -58,6 +58,7 @@
     ["SpectrumPro 2.x - Laem Chabang - Center", "7c2a08e61bc0f5dcbe48eca7624bcb94"],
     ["SpectrumPro 2.x - Laem Chabang - Central (CTN/MSD)", "22ba35af932f96908f06bfc01bba1072"],
     ["SpectrumPro 2.x - Laem Chabang - Central (OBI/ABF)", "4076d75bc6604bdc4f765313a3b4fc45"],
+    ["SpectrumPro 2.x - Laem Chabang - IBM", "16f2c71b1bc3659059fdedf3604bcb53"],
     ["SpectrumPro 2.x - Laem Chabang - Dellcom", "a6f2c71b1bc3659059fdedf3604bcb5d"],
     ["SpectrumPro 2.x - Laem Chabang - EMC", "aaf2c71b1bc3659059fdedf3604bcb62"],
     ["SpectrumPro 2.x - Laem Chabang - KeySight", "3aa1c8345b1f8bd8f6923cb70979d172"],
